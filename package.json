@@ -22,9 +22,7 @@
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "dependencies": {
-    "fuzzyset.js": "0.0.8",
     "git-rev-promises": "^1.1.0",
-    "pick-n-mix": "^0.3.2",
     "string-template": "^1.0.0"
   },
   "devDependencies": {
