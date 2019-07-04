@@ -26,7 +26,7 @@ npm install --save scribbles
 ```js
 const scribble = require('scribbles');
 
-scribble("hello world")
+scribble.log("hello world")
 
 // myRepo:local:master 2022-06-27T16:24:06.473Z #3d608bf <log> index.js:174 (Object.<anonymous>) hello world
 ```
@@ -35,12 +35,18 @@ scribble("hello world")
 
 There is a `config` that takes a configuration object.
 
-* **sendTo**  [function]
+* **dataOut**  [function]
   * A called back to receive an object representing the log entry
 * **mode** [string] - *default: 'dev'*
+  * Can use NODE_ENV from environment variables
 * **standerOut** [function] - *defaults: `console`*
-  *  Redirect the string output of the log entry
+  * Redirect the string output of the log entry
 * **format** [string] - *defaults: "{repo}:{mode}:{branch} {timeIso} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}"*
+* **logLevel** - *defaults: "log"
+  * Report on this level and higher
+  * Can use LOG_LEVEL from environment variables
+* **levels** - *defaults: `["error", "warn", "log", "info", "debug"]`*
+  * Messages will be filtered from the `logLevel` to the start of the array
 
 Example:
 ```js
@@ -49,7 +55,7 @@ scribble.config({
    format:'{timeIso} [{mode}#{gitHash}] {message}'
 })
 
-scribble("hello world")
+scribble.log("hello world")
 
 // 2022-06-27T16:24:06.473Z [live#3d608bf] hello world
 ```
@@ -59,7 +65,6 @@ scribble("hello world")
 Todo:
 
 * Customising Time format
-* Default environment based on environment variables
-* Allow log level to be set
-* Suppress logs based on log level
 * Allow for coloured logs
+* support correlation IDs
+* support console.group

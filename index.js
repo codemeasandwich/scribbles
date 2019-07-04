@@ -12,19 +12,20 @@ Promise.all([gitRevP.short(),gitRevP.repo(), gitRevP.branch()])
        .then(function([short,repo,branch]){
           gitValues = {short,repo,branch};
           flushingBuffer = true;
-          logBuffer.forEach(({err, vals, message,opts}) => scribble(err, vals, message, opts))
+          logBuffer.forEach(({err, vals, message,opts, level}) => scribble(level, err, vals, message, opts))
           flushingBuffer = false;
        })// END get GIT values + process todo list
 
 const logBuffer = []
 
-function scribble(err, vals, message){
+function scribble(level, err, vals, message){
 
     if( ! gitValues){
       logBuffer.push({
         err,
         vals,
         message,
+        level,
         opts:{
           time:new Date(),
           stack:new Error().stack
@@ -33,10 +34,9 @@ function scribble(err, vals, message){
       return;
     }// END if( ! gitValues)
 
-    const { time, stack } = arguments[3] || {};
-
+    const { time, stack } = arguments[4] || {};
     const isErr = err instanceof Error;
-    const level = isErr ? "error" : "log"
+  //  const level = isErr ? "error" : level || this.level || "log"
 
     if( ! isErr
     && "string" !== typeof err
@@ -97,22 +97,27 @@ function scribble(err, vals, message){
       }
     } // END body
 
-    if( ! config.prod){
+    if(config.standerOut){
       let standerOut;
-      if(config.standerOut){
-        if(config.standerOut[body.level]){
-          standerOut = config.standerOut[body.level]
-        } else {
-          standerOut = config.standerOut
-        }
-      } // END if config.standerOut
+      if(config.standerOut[body.level]){
+        standerOut = config.standerOut[body.level]
+      } else if('function' === typeof config.standerOut){
+        standerOut = config.standerOut
+      } else if('function' === typeof config.standerOut.log) {
+        standerOut = config.standerOut.log
+      } else {
+        throw new Error(`${body.level} was not found on standerOut`)
+      }
       standerOut(body.toString())
-    } // END  if ! config.prod
+    } // END if config.standerOut
 
-    if(config.prod && config.sendTo){
-      config.sendTo(body)
-    }
+    config.dataOut && config.dataOut(body)
   }// END scribble
+
+
+//=====================================================
+//=============================================== Utils
+//=====================================================
 
 //++++++++++++++++++++++++++++++++++++++++++ getSource
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -133,17 +138,54 @@ function getSource(stack){
     } // END return
 } // END getSource
 
-module.exports = scribble;
+const scribbles = {}
+
+module.exports = scribbles;
+
+//=====================================================
+//====================================== Default Config
+//=====================================================
 
 let config = {
-  sendTo : undefined,
-  mode: 'dev',
+  mode: process.env.NODE_ENV || 'dev',
+  logLevel:process.env.LOG_LEVEL || "log",
+  levels:["error", "warn", "log", "info", "debug"],
   standerOut: console,
+  dataOut : undefined,
   format:`{repo}:{mode}:{branch} {timeIso} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
 }
 
-scribble.config = function scribbleConfig(opts){
+//=====================================================
+//==================================== Scribbles Config
+//=====================================================
+
+scribbles.config = function scribblesConfig(opts){
+
+//+++++++++++++++++++++++++++++++++++++++ Clean config
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  config.levels.forEach((logLevel) => {
+    delete scribbles[logLevel];
+  })
+
+//++++++++++++++++++++++++++++++++++ overwrite options
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
   Object.assign(config,opts);
-  const mode = (opts.mode || config.mode).toLowerCase()
-  config.prod = 'prod' === mode || 'production' === mode || 'live' === mode || 'staging' === mode
-} // END sumologger.config
+
+//+++++++++++++++++++++++++++++++++++ setup log levels
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  config.logRange = config.levels.indexOf(config.logLevel)
+
+  config.levels.forEach((logLevel,index) => {
+    if(index <= config.logRange){
+      scribbles[logLevel] = scribble.bind(null,logLevel)
+    } else {
+      scribbles[logLevel] = ()=>{ }
+    }
+  }) // END config.levels.forEach
+
+} // END scribblesConfig
+
+scribbles.config()
