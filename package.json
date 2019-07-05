@@ -1,7 +1,7 @@
 {
   "name": "scribbles",
   "version": "0.2.0",
-  "description": "Create, Log and Analyse JS errors & messages",
+  "description": "Scribbles is a node console out formatter",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

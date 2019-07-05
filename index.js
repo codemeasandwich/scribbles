@@ -84,7 +84,7 @@ function scribble(level, err, vals, message){
       gitHash: gitValues.short,
       time: flushingBuffer ? time : new Date(),
       toString : function(){
-        const time  = moment(body.time).format(config.time);//body.time.toISOString().replace(/([^T]+)TT([^\.]+).*/g, '$1 $2');
+        const time  = moment(body.time).format(config.time);
         const logLevel = body.level;
 
         const fileName   = body.from.file;
@@ -112,19 +112,19 @@ function scribble(level, err, vals, message){
       }
     } // END body
 
-    if(config.standerOut){
-      let standerOut;
-      if(config.standerOut[body.level]){
-        standerOut = config.standerOut[body.level]
-      } else if('function' === typeof config.standerOut){
-        standerOut = config.standerOut
-      } else if('function' === typeof config.standerOut.log) {
-        standerOut = config.standerOut.log
+    if(config.stdOut){
+      let stdOut;
+      if(config.stdOut[body.level]){
+        stdOut = config.stdOut[body.level]
+      } else if('function' === typeof config.stdOut){
+        stdOut = config.stdOut
+      } else if('function' === typeof config.stdOut.log) {
+        stdOut = config.stdOut.log
       } else {
-        throw new Error(`${body.level} was not found on standerOut`)
+        throw new Error(`${body.level} was not found on stdOut`)
       }
-      standerOut(body.toString())
-    } // END if config.standerOut
+      stdOut(body.toString())
+    } // END if config.stdOut
 
     config.dataOut && config.dataOut(body)
   }// END scribble
@@ -165,7 +165,7 @@ let config = {
   mode: process.env.NODE_ENV || 'dev',
   logLevel:process.env.LOG_LEVEL || "log",
   levels:["error", "warn", "log", "info", "debug"],
-  standerOut: console,
+  stdOut: console,
   dataOut : undefined,
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
   format:`{repo}:{mode}:{branch} [{correlationName} {correlationId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
@@ -221,6 +221,8 @@ scribbles.config = function scribblesConfig(opts){
     if(index <= config.logRange){
       scribbles[logLevel] = scribble.bind(null,logLevel)
     } else {
+      // Log levels below the seletecd level will be suppressed. 
+      // This will allow you to have verbose logging calls to out your code without the performance impact
       scribbles[logLevel] = ()=>{ }
     }
   }) // END config.levels.forEach
