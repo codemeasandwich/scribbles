@@ -70,7 +70,7 @@ function scribble(level, err, vals, message){
       gitHash: gitValues.short,
       time: flushingBuffer ? time : new Date(),
       toString : function(){
-        const timeIso  = body.time.toISOString().replace(/([^T]+)TT([^\.]+).*/g, '$1 $2');
+        const timeIso  = moment(body.time).format(config.time);//body.time.toISOString().replace(/([^T]+)TT([^\.]+).*/g, '$1 $2');
         const logLevel = body.level;
 
         const fileName   = body.from.file;
@@ -78,7 +78,7 @@ function scribble(level, err, vals, message){
         const exeType    = body.from.type;
         const mode       = body.mode
         const repo       = body.repo
-        const branch    = body.branch
+        const branch     = body.branch
         const gitHash    = body.gitHash
 
         const outputMessage    = message || err.message || err;
@@ -152,6 +152,7 @@ let config = {
   levels:["error", "warn", "log", "info", "debug"],
   standerOut: console,
   dataOut : undefined,
+  time:'YYYY-MM-DDTHH:mm:ss.SSS',
   format:`{repo}:{mode}:{branch} {timeIso} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
 }
 

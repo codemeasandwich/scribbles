@@ -28,21 +28,23 @@ const scribble = require('scribbles');
 
 scribble.log("hello world")
 
-// myRepo:local:master 2022-06-27T16:24:06.473Z #3d608bf <log> index.js:174 (Object.<anonymous>) hello world
+// myRepo:local:master 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 (Object.<anonymous>) hello world
 ```
 
 ## How to customise
 
 There is a `config` that takes a configuration object.
 
+* **standerOut** [function] - *defaults: `console`*
+  * Redirect the string output of the log entry
 * **dataOut**  [function]
   * A called back to receive an object representing the log entry
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
-* **standerOut** [function] - *defaults: `console`*
-  * Redirect the string output of the log entry
 * **format** [string] - *defaults: "{repo}:{mode}:{branch} {timeIso} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}"*
-* **logLevel** - *defaults: "log"
+* **time** [string] - *defaults: "YYYY-MM-DDTHH:mm:ss.SSS"*
+  * [Time formatting is provided by Moment.js](https://momentjs.com/docs/#/displaying/format/)
+* **logLevel** - *defaults: "log"*
   * Report on this level and higher
   * Can use LOG_LEVEL from environment variables
 * **levels** - *defaults: `["error", "warn", "log", "info", "debug"]`*
@@ -51,20 +53,19 @@ There is a `config` that takes a configuration object.
 Example:
 ```js
 scribble.config({
-   mode:'live',
+   mode:'test-runner',
    format:'{timeIso} [{mode}#{gitHash}] {message}'
 })
 
 scribble.log("hello world")
 
-// 2022-06-27T16:24:06.473Z [live#3d608bf] hello world
+// 2022-06-27T16:24:06.473 [test-runner#3d608bf] hello world
 ```
 
 ---
 
 Todo:
 
-* Customising Time format
 * Allow for coloured logs
 * support correlation IDs
 * support console.group
