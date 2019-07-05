@@ -1,8 +1,12 @@
 
 const gitRevP = require('git-rev-promises')
-var format = require("string-template");
-var path = require('path');
-var appDir = path.dirname(require.main.filename);
+const format = require("string-template");
+const path = require('path');
+const moment = require('moment')
+let appDir = path.dirname(require.main.filename);
+ const createNamespace = require('cls-hooked').createNamespace;
+
+const cls = require('cls-hooked');
 
 appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 
@@ -20,6 +24,9 @@ const logBuffer = []
 
 function scribble(level, err, vals, message){
 
+    const correlater = cls.getNamespace('correlate')
+    const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>"";
+
     if( ! gitValues){
       logBuffer.push({
         err,
@@ -28,13 +35,19 @@ function scribble(level, err, vals, message){
         level,
         opts:{
           time:new Date(),
-          stack:new Error().stack
+          stack:new Error().stack,
+          correlationId:getCorrelaterValue('correlationId'),
+          correlationName:getCorrelaterValue('correlationName')
         }
       })
       return;
     }// END if( ! gitValues)
 
-    const { time, stack } = arguments[4] || {};
+    // we are in the pcress of flushing old messages
+    const { time, stack, correlationId, correlationName } = flushingBuffer ? arguments[4] : { correlationId:getCorrelaterValue('key'), correlationName:getCorrelaterValue('correlationName') };
+
+
+
     const isErr = err instanceof Error;
   //  const level = isErr ? "error" : level || this.level || "log"
 
@@ -61,6 +74,7 @@ function scribble(level, err, vals, message){
       repo:gitValues.repo,
       vals,
       err,
+      correlationId, correlationName,
       mode:config.mode,
       from:getSource(flushingBuffer ? stack : new Error().stack),
                           // remove the message line from trace
@@ -70,7 +84,7 @@ function scribble(level, err, vals, message){
       gitHash: gitValues.short,
       time: flushingBuffer ? time : new Date(),
       toString : function(){
-        const timeIso  = moment(body.time).format(config.time);//body.time.toISOString().replace(/([^T]+)TT([^\.]+).*/g, '$1 $2');
+        const time  = moment(body.time).format(config.time);//body.time.toISOString().replace(/([^T]+)TT([^\.]+).*/g, '$1 $2');
         const logLevel = body.level;
 
         const fileName   = body.from.file;
@@ -87,13 +101,14 @@ function scribble(level, err, vals, message){
 
         // based on: https://www.npmjs.com/package/tracer
         return format(config.format,{ repo,       mode,
-                                      branch,     timeIso,
+                                      branch,     time,
                                       gitHash,    logLevel,
                                       fileName,   lineNumber,
-                                      exeType,
+                                      exeType,    correlationId,
                                       message : outputMessage,
                                       value : outputValue,
-                                      stackTrace : outputStackTrace})
+                                      stackTrace : outputStackTrace,
+                                    correlationName})
       }
     } // END body
 
@@ -153,7 +168,30 @@ let config = {
   standerOut: console,
   dataOut : undefined,
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} {timeIso} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
+  format:`{repo}:{mode}:{branch} [{correlationName} {correlationId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
+}
+
+
+
+
+scribbles.correlate = function correlate(name, next, args){
+
+  if('function' === typeof name){
+    args = next;
+    next = name;
+    name = '';
+  }
+
+  const correlater = createNamespace('correlate')
+
+  correlater.run(()=>{
+    correlater.set('correlationId', uuidGen().toUpperCase());
+    correlater.set('correlationName', name);
+    if(Array.isArray(args))
+      next( ...args )
+    else
+      next()
+  })
 }
 
 //=====================================================
@@ -190,3 +228,6 @@ scribbles.config = function scribblesConfig(opts){
 } // END scribblesConfig
 
 scribbles.config()
+
+
+function uuidGen(a){return a?(a^Math.random()*16>>a/4).toString(32):([1e4]+1e2).replace(/[018]/g,uuidGen)}

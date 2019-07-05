@@ -22,6 +22,7 @@
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "dependencies": {
+    "cls-hooked": "^4.2.2",
     "git-rev-promises": "^1.1.0",
     "moment": "^2.24.0",
     "string-template": "^1.0.0"
