@@ -73,8 +73,8 @@ function scribble(level, err, vals, message){
       branch:gitValues.branch,
       repo:gitValues.repo,
       vals,
-      err,
-      correlationId, correlationName,
+      correlationId:correlationId?correlationId:undefined,
+      correlationName:correlationName?correlationName:undefined,
       mode:config.mode,
       from:getSource(flushingBuffer ? stack : new Error().stack),
                           // remove the message line from trace
@@ -125,8 +125,8 @@ function scribble(level, err, vals, message){
       }
       stdOut(body.toString())
     } // END if config.stdOut
-
-    config.dataOut && config.dataOut(body)
+console.log(JSON.stringify(Object.assign({},body,{time : moment(body.time).format(config.time)})))
+    config.dataOut && config.dataOut(Object.assign({},body,{time : moment(body.time).format(config.time)}))
   }// END scribble
 
 
@@ -174,10 +174,9 @@ let config = {
 
 
 
-scribbles.correlate = function correlate(name, next, args){
+scribbles.correlate = function correlate(name, next){
 
   if('function' === typeof name){
-    args = next;
     next = name;
     name = '';
   }
@@ -185,12 +184,10 @@ scribbles.correlate = function correlate(name, next, args){
   const correlater = createNamespace('correlate')
 
   correlater.run(()=>{
+    const correlationId = uuidGen().toUpperCase();
     correlater.set('correlationId', uuidGen().toUpperCase());
     correlater.set('correlationName', name);
-    if(Array.isArray(args))
-      next( ...args )
-    else
-      next()
+      next(correlationId)
   })
 }
 
@@ -221,7 +218,7 @@ scribbles.config = function scribblesConfig(opts){
     if(index <= config.logRange){
       scribbles[logLevel] = scribble.bind(null,logLevel)
     } else {
-      // Log levels below the seletecd level will be suppressed. 
+      // Log levels below the seletecd level will be suppressed.
       // This will allow you to have verbose logging calls to out your code without the performance impact
       scribbles[logLevel] = ()=>{ }
     }

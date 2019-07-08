@@ -106,7 +106,7 @@ To use the correlation system you only need to pass in a root function that acts
 ## correlate function signature
 
 ```
-scribbles.correlate([correlationName,]next_fu,[args_for_next_fn])
+scribbles.correlate([correlationName,]next_fu)
 ```
 
 :dizzy: The correlation name can be used when wanting to **correlate across microservices**. In this pattern a shared Ids is normally pasted in the `header` of the request. You can set this as the correlationName so your logs will reflect this distributed Id.
@@ -115,10 +115,16 @@ Example:
 
 *index.js*
 ```js
+// for fun lets set a custom format for our logs
 scribbles.config({format:`[{correlationName} {correlationId}] {message}`})
 
+// an example of an event handler
 function incoming(dataIn){
-  scribbles.correlate("eventstream",workToDo,[dataIn])
+  // wrap the work we want to do in `scribbles.correlate`
+  scribbles.correlate("eventstream",(correlationId)=>{
+    // kick of the work
+    workToDo(dataIn);
+  })
 }
 ```
 
@@ -126,11 +132,13 @@ function incoming(dataIn){
 ```js
 function workToDo(dataIn){
   // ...
+  // user scribbles as normal
   scribbles.log("Doing something with the eventstream")
   // [eventstream A4D87154] Doing something with the eventstream
   // ...
 }
 ```
+
 
 ---
 
