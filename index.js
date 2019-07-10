@@ -4,9 +4,8 @@ const format = require("string-template");
 const path = require('path');
 const moment = require('moment')
 let appDir = path.dirname(require.main.filename);
- const createNamespace = require('cls-hooked').createNamespace;
-
 const cls = require('cls-hooked');
+const createNamespace = require('cls-hooked').createNamespace;
 
 appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 
@@ -24,7 +23,8 @@ const logBuffer = []
 
 function scribble(level, err, vals, message){
 
-    const correlater = cls.getNamespace('correlate')
+    const correlater = cls.getNamespace(Object.keys(process.namespaces)
+          .find(correlationId => !! process.namespaces[correlationId].active))
     const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>"";
 
     if( ! gitValues){
@@ -180,12 +180,11 @@ scribbles.correlate = function correlate(name, next){
     next = name;
     name = '';
   }
-
-  const correlater = createNamespace('correlate')
+  const correlationId = uuidGen().toUpperCase();
+  const correlater = createNamespace(correlationId)
 
   correlater.run(()=>{
-    const correlationId = uuidGen().toUpperCase();
-    correlater.set('correlationId', uuidGen().toUpperCase());
+    correlater.set('correlationId', correlationId);
     correlater.set('correlationName', name);
       next(correlationId)
   })
