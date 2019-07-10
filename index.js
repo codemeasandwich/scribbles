@@ -4,8 +4,8 @@ const format = require("string-template");
 const path = require('path');
 const moment = require('moment')
 let appDir = path.dirname(require.main.filename);
-const cls = require('cls-hooked');
-const createNamespace = require('cls-hooked').createNamespace;
+const cls = require('@ashleyw/cls-hooked');
+const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 
 appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 
@@ -19,13 +19,31 @@ Promise.all([gitRevP.short(),gitRevP.repo(), gitRevP.branch()])
           flushingBuffer = false;
        })// END get GIT values + process todo list
 
-const logBuffer = []
+const logBuffer = [], inUse = {}
 
 function scribble(level, err, vals, message){
 
-    const correlater = cls.getNamespace(Object.keys(process.namespaces)
-          .find(correlationId => !! process.namespaces[correlationId].active))
-    const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>"";
+const namespaces = Object.keys(process.namespaces)
+let correlater;
+namespaces.forEach(cid => {
+
+  // find the active namespace
+  if(!! process.namespaces[cid].active){
+    correlater = cls.getNamespace(cid)
+  }
+
+  if(process.namespaces[cid]._contexts.size === 0 && inUse[cid] ){
+    // if used + no more context => garbage collecte
+    cls.destroyNamespace(cid);
+    delete inUse[cid];
+  } else if(! inUse[cid]) {
+    // add to the inuse if new
+    inUse[cid] = true
+  }
+
+})// END namespaces.forEach
+
+const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>"";
 
     if( ! gitValues){
       logBuffer.push({

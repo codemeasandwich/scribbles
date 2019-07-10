@@ -1,6 +1,6 @@
 {
   "name": "scribbles",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Scribbles is a node console out formatter",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,7 @@
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "dependencies": {
-    "cls-hooked": "^4.2.2",
+    "@ashleyw/cls-hooked": "^5.0.1",
     "git-rev-promises": "^1.1.0",
     "moment": "^2.24.0",
     "string-template": "^1.0.0"
