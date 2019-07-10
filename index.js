@@ -44,7 +44,7 @@ function scribble(level, err, vals, message){
     }// END if( ! gitValues)
 
     // we are in the pcress of flushing old messages
-    const { time, stack, correlationId, correlationName } = flushingBuffer ? arguments[4] : { correlationId:getCorrelaterValue('key'), correlationName:getCorrelaterValue('correlationName') };
+    const { time, stack, correlationId, correlationName } = flushingBuffer ? arguments[4] : { correlationId:getCorrelaterValue('correlationId'), correlationName:getCorrelaterValue('correlationName') };
 
 
 
