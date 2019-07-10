@@ -1,6 +1,6 @@
 {
   "name": "scribbles",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Scribbles is a node console out formatter",
   "main": "index.js",
   "scripts": {

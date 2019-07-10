@@ -125,7 +125,7 @@ function scribble(level, err, vals, message){
       }
       stdOut(body.toString())
     } // END if config.stdOut
-console.log(JSON.stringify(Object.assign({},body,{time : moment(body.time).format(config.time)})))
+
     config.dataOut && config.dataOut(Object.assign({},body,{time : moment(body.time).format(config.time)}))
   }// END scribble
 
