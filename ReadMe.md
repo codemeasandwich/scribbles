@@ -72,6 +72,14 @@ There is a `config` that takes a configuration object.
     * `message`: Message to log
     * `value`: Values to log
     * `stackTrace`: The stack trace if an Error object was passed
+  * [process](https://nodejs.org/api/process.html):
+    * `pTitle`: the current process title (i.e. returns the current value of ps)
+    * `pid`: the PID of the process
+    * `ppid`:  the PID of the current parent process.
+    * `user`: node the name of the user who started node,
+    * `vNode`: version of node,
+    * `arch`: platform architecture. e.g "x64"
+    * `platform`: the operating system platform
 * **time** [string] - *defaults: "YYYY-MM-DDTHH:mm:ss.SSS"*
   * [Time formatting is provided by Moment.js](https://momentjs.com/docs/#/displaying/format/)
 * **logLevel** [string] - *defaults: "log"*

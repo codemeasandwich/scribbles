@@ -125,6 +125,13 @@ const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>""
                                       exeType,    correlationId,
                                       message : outputMessage,
                                       value : outputValue,
+                                      pTitle : process.title,
+                                      pid: process.pid,
+                                      ppid: process.ppid,
+                                      user : process.env.USER,
+                                      vNode: process.version,
+                                      arch: process.arch,
+                                      platform: process.platform,
                                       stackTrace : outputStackTrace,
                                     correlationName})
       }
