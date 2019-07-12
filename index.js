@@ -20,30 +20,38 @@ Promise.all([gitRevP.short(),gitRevP.repo(), gitRevP.branch()])
        })// END get GIT values + process todo list
 
 const logBuffer = [], inUse = {}
+let lastActiveNamespace;
 
 function scribble(level, err, vals, message){
 
-const namespaces = Object.keys(process.namespaces)
-let correlater;
-namespaces.forEach(cid => {
+let getCorrelaterValue = () => undefined;
 
-  // find the active namespace
-  if(!! process.namespaces[cid].active){
-    correlater = cls.getNamespace(cid)
-  }
+// check to see if we are still in the same namespace
+if( lastActiveNamespace && process.namespaces[lastActiveNamespace].active){
+  const correlater = cls.getNamespace(lastActiveNamespace)
+  getCorrelaterValue = correlater.get.bind(correlater)
+} else {
+  // check to see if we are still in a differint namespace
+  Object.keys(process.namespaces)
+        .forEach(cid => {
 
-  if(process.namespaces[cid]._contexts.size === 0 && inUse[cid] ){
-    // if used + no more context => garbage collecte
-    cls.destroyNamespace(cid);
-    delete inUse[cid];
-  } else if(! inUse[cid]) {
-    // add to the inuse if new
-    inUse[cid] = true
-  }
+    // find the active namespace
+    if(!! process.namespaces[cid].active){
+      const correlater = cls.getNamespace(cid)
+      getCorrelaterValue = correlater.get.bind(correlater)
+      lastActiveNamespace = cid;
+    } else if(0 === process.namespaces[cid]._contexts.size && inUse[cid] ){
+      // if used + no more context => garbage collecte
+      cls.destroyNamespace(cid);
+      delete inUse[cid];
+    } else if(! inUse[cid]) {
+      // add to the inuse if new
+      inUse[cid] = true
+    }
 
-})// END namespaces.forEach
+  })// END namespaces.forEach
 
-const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>"";
+} // END else
 
     if( ! gitValues){
       logBuffer.push({
@@ -63,8 +71,6 @@ const getCorrelaterValue = correlater ? correlater.get.bind(correlater) : ()=>""
 
     // we are in the pcress of flushing old messages
     const { time, stack, correlationId, correlationName } = flushingBuffer ? arguments[4] : { correlationId:getCorrelaterValue('correlationId'), correlationName:getCorrelaterValue('correlationName') };
-
-
 
     const isErr = err instanceof Error;
   //  const level = isErr ? "error" : level || this.level || "log"
