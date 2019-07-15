@@ -8,7 +8,7 @@ const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
 
 const defaultVendor = 'scribbles'
-const crockford = "0123456789ABCDEFGHJKMNPQRTUVWXYZ"
+
 const gitValues = {
   short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
   repo:exec('basename -s .git `git config --get remote.origin.url`',{ encoding: 'utf8' }).trim(),
@@ -17,46 +17,45 @@ const gitValues = {
 
 let appDir = path.dirname(require.main.filename);
     appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
-let traceCount = 0, lastActiveNamespace;
+let traceCount = 0, lastActiveSpan;
 const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
-                             + crockford32(process.ppid.toString(32).slice(-1)
-                                          +process. pid.toString(32).slice(-1))
-                             + crockford[Math.floor(Math.random() * 31)])
+                             + process.ppid.toString(15).slice(-2)
+                             + process. pid.toString(15).slice(-2)
+                             + Math.floor(Math.random() * 15).toString(16))
 
 const hostname = os.hostname()
-
 
 function myNamespace(){
 
   let correlaterValue = () => undefined;
 
   // check to see if we are still in the same namespace
-  if( lastActiveNamespace
-  && process.namespaces[lastActiveNamespace]
-  && process.namespaces[lastActiveNamespace].active){
-    const trace = cls.getNamespace(lastActiveNamespace)
+  if( lastActiveSpan
+  && process.namespaces[lastActiveSpan]
+  && process.namespaces[lastActiveSpan].active){
+    const trace = cls.getNamespace(lastActiveSpan)
     correlaterValue = function(key,value){
       return 1 === arguments.length ? trace.get(key) : trace.set(key,value)
     }
   } else {
     // check to see if we are still in a differint namespace
     Object.keys(process.namespaces)
-          .forEach(cuid => {
+          .forEach(spanId => {
 
       // find the active namespace
-      if(!! process.namespaces[cuid].active){
-        const trace = cls.getNamespace(cuid)
+      if(!! process.namespaces[spanId].active){
+        const trace = cls.getNamespace(spanId)
         correlaterValue = function(key,value){
           return 1 === arguments.length ? trace.get(key) : trace.set(key,value)
         }
-        lastActiveNamespace = cuid;
-      } else if(0 === process.namespaces[cuid]._contexts.size && inUse[cuid]){
+        lastActiveSpan = spanId;
+      } else if(0 === process.namespaces[spanId]._contexts.size && inUse[spanId]){
         // if used + no more context => garbage collecte
-        cls.destroyNamespace(cuid);
-        delete inUse[cuid];
-      } else if(! inUse[cuid]) {
+        cls.destroyNamespace(spanId);
+        delete inUse[spanId];
+      } else if(! inUse[spanId]) {
         // add to the inuse if new
-        inUse[cuid] = true
+        inUse[spanId] = true
       }
 
     })// END namespaces.forEach
@@ -74,8 +73,8 @@ function scribble(level, err, vals, message){
 
     // we are in the pcress of flushing old messages
     const traceId = correlaterValue('traceId');
-    const traceLabel = correlaterValue('traceLabel');
-    const parentId = correlaterValue('parentId');
+    const spanLabel = correlaterValue('spanLabel');
+    const spanId = correlaterValue('spanId');
     const tracestate = correlaterValue('tracestate');
 
     const isErr = err instanceof Error;
@@ -105,17 +104,15 @@ function scribble(level, err, vals, message){
         gitHash: gitValues.short
       },
       trace:{
-      // if we are in a trace, then the traceId will be populated
-      // and we can use lastActiveNamespace to get the cuid
-        cuid: traceId && lastActiveNamespace,
-        traceLabel,
         traceId,
-        parentId,
+        spanId,
+        spanLabel,
         tracestate
       },
       info:{
         time: new Date(),
         mode:config.mode,
+        hostname,
         logLevel:level
       },
       context:{
@@ -214,23 +211,23 @@ let config = {
   dataOut : undefined,
   vendor:defaultVendor,
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} [{label} {cuid}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
+  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
 }
 
 traceCount = 1;
 
 scribbles.trace = function trace(opts, next){
 
-  let traceId, traceLabel, tracestate;
+  let traceId, spanLabel, tracestate;
 
   if('object' === typeof opts){
-    traceLabel = opts.traceLabel
+    spanLabel = opts.spanLabel
     traceId = opts.traceId
     tracestate = 'string' === typeof opts.tracestate
                   && "" !== opts.tracestate ? parceTracestate(opts.tracestate)
                                             : opts.tracestate // this maybe undefined
   } else if('string' === typeof opts){
-    traceLabel = opts
+    spanLabel = opts
   } else if('function' === typeof opts){
     next = opts;
   }
@@ -243,23 +240,20 @@ scribbles.trace = function trace(opts, next){
     tracestate = []
   }
 
-  const parentId = crypto.randomBytes(8).toString('hex');
-  const cuid = cuidPrefix+crockford32(("000000" + traceCount.toString(32)) // Max value of 32,073,741,823
-                 .slice(-7))
+  const spanId = cuidPrefix+("00000000" + traceCount.toString(16)).slice(-9)
 
   traceCount++;
 
+  tracestate = tracestate.filter(span=> config.vendor !== span.vendor)
+  tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(spanId)})
 
-  tracestate = tracestate.filter(parent=> config.vendor !== parent.vendor)
-  tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(parentId)})
-
-  const trace = createNamespace(cuid)
+  const trace = createNamespace(spanId)
   trace.run(()=>{
               trace.set('traceId', traceId);
-              trace.set('parentId', parentId);
+              trace.set('spanId', spanId);
               trace.set('tracestate', tracestate);
-    if(traceLabel){ trace.set('traceLabel', traceLabel); }
-    next(cuid)
+    if(spanLabel){ trace.set('spanLabel', spanLabel); }
+    next(spanId)
   })
 } // END trace
 
@@ -271,11 +265,11 @@ scribbles.trace.header = function traceContext(){
 
   const correlaterValue = myNamespace()
   const traceId = correlaterValue('traceId')
-  const parentId = correlaterValue('parentId')
+  const spanId = correlaterValue('spanId')
   const tracestate = correlaterValue('tracestate');
   console.log(tracestate)
   return {
-    traceparent:`00-${traceId}-${parentId}-01`,
+    tracespan:`00-${traceId}-${spanId}-01`,
     tracestate:tracestate.reduce((arr, {vendor,opaque}) => {
         arr.push(`${vendor}=${opaque}`);
         return arr;
@@ -295,20 +289,15 @@ function parceTracestate(tracestate){
 scribbles.updateTracestate = function updateTracestate(incomingTraceState){
 
   const correlaterValue = myNamespace()
-  const parentId = crypto.randomBytes(8).toString('hex');
+  const spanId = crypto.randomBytes(8).toString('hex');
   let tracestate = parceTracestate(incomingTraceState)
-      tracestate = tracestate.filter(parent=> config.vendor !== parent.vendor)
-      tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(parentId)})
+      tracestate = tracestate.filter(span=> config.vendor !== span.vendor)
+      tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(spanId)})
 
   //update
-  correlaterValue('parentId', parentId);
+  correlaterValue('spanId', spanId);
   correlaterValue('tracestate', tracestate);
 } // updateTracestate
-
-
-function crockford32(base32){
-  return base32.split('').map(char => crockford[parseInt(char,32)] ).join('')
-}
 
 function hexToBase64(str) {
 
