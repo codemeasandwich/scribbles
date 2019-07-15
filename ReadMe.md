@@ -150,8 +150,8 @@ function workToDo(dataIn){
   // If you want to call another service you can get the trace header
   scribbles.trace.header()
   // {
-  //   tracespan: '00-962ceea8a01df78f9663df841d2fd8e6-090e8e40000005-01',
-  //   tracestate: 'scribbles=CQ6OQAAABQ='
+  //   traceparent: '00-962ceea8a01df78f9663df841d2fd8e6-090e8e40000005-01',
+  //   tracestate: 'scribbles=CQ6OQAAABQ'
   // }
 }
 ```
