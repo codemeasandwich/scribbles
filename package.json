@@ -23,11 +23,8 @@
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "dependencies": {
     "@ashleyw/cls-hooked": "^5.0.1",
-    "git-rev-promises": "^1.1.0",
     "moment": "^2.24.0",
     "string-template": "^1.0.0"
   },
-  "devDependencies": {
-    "jest": "^24.8.0"
-  }
+  "devDependencies": {}
 }

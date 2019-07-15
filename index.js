@@ -266,7 +266,7 @@ scribbles.trace.header = function traceContext(){
   const traceId = correlaterValue('traceId')
   const spanId = correlaterValue('spanId')
   const tracestate = correlaterValue('tracestate');
-  console.log(tracestate)
+
   return {
     traceparent:`00-${traceId}-${spanId}-01`,
     tracestate:tracestate.reduce((arr, {vendor,opaque}) => {
