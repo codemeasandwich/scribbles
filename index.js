@@ -1,76 +1,80 @@
-
-const gitRevP = require('git-rev-promises')
 const format = require("string-template");
 const path = require('path');
 const moment = require('moment')
-let appDir = path.dirname(require.main.filename);
+const crypto = require('crypto')
+const os = require('os');
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
+var exec = require('child_process').execSync
 
-appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
+const currentVendor = 'scribbles'
+const crockford = "0123456789ABCDEFGHJKMNPQRTUVWXYZ"
+const gitValues = {
+  short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
+  repo:exec('basename -s .git `git config --get remote.origin.url`',{ encoding: 'utf8' }).trim(),
+  branch:exec('git rev-parse --abbrev-ref HEAD',{ encoding: 'utf8' }).trim()
+};
 
-let gitValues;
-let flushingBuffer = false;
-Promise.all([gitRevP.short(),gitRevP.repo(), gitRevP.branch()])
-       .then(function([short,repo,branch]){
-          gitValues = {short,repo,branch};
-          flushingBuffer = true;
-          logBuffer.forEach(({err, vals, message,opts, level}) => scribble(level, err, vals, message, opts))
-          flushingBuffer = false;
-       })// END get GIT values + process todo list
+let appDir = path.dirname(require.main.filename);
+    appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
+let traceCount = 0, lastActiveNamespace;
+const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
+                             + crockford32(process.ppid.toString(32).slice(-1)
+                                          +process. pid.toString(32).slice(-1))
+                             + crockford[Math.floor(Math.random() * 31)])
 
-const logBuffer = [], inUse = {}
-let lastActiveNamespace;
+const hostname = os.hostname()
+
+
+function myNamespace(){
+
+  let correlaterValue = () => undefined;
+
+  // check to see if we are still in the same namespace
+  if( lastActiveNamespace
+  && process.namespaces[lastActiveNamespace]
+  && process.namespaces[lastActiveNamespace].active){
+    const trace = cls.getNamespace(lastActiveNamespace)
+    correlaterValue = function(key,value){
+      return 1 === arguments.length ? trace.get(key) : trace.set(key,value)
+    }
+  } else {
+    // check to see if we are still in a differint namespace
+    Object.keys(process.namespaces)
+          .forEach(cuid => {
+
+      // find the active namespace
+      if(!! process.namespaces[cuid].active){
+        const trace = cls.getNamespace(cuid)
+        correlaterValue = function(key,value){
+          return 1 === arguments.length ? trace.get(key) : trace.set(key,value)
+        }
+        lastActiveNamespace = cuid;
+      } else if(0 === process.namespaces[cuid]._contexts.size && inUse[cuid]){
+        // if used + no more context => garbage collecte
+        cls.destroyNamespace(cuid);
+        delete inUse[cuid];
+      } else if(! inUse[cuid]) {
+        // add to the inuse if new
+        inUse[cuid] = true
+      }
+
+    })// END namespaces.forEach
+
+  } // END else
+
+  return correlaterValue
+
+} // END myNamespace
+
 
 function scribble(level, err, vals, message){
 
-let getCorrelaterValue = () => undefined;
-
-// check to see if we are still in the same namespace
-if( lastActiveNamespace && process.namespaces[lastActiveNamespace].active){
-  const correlater = cls.getNamespace(lastActiveNamespace)
-  getCorrelaterValue = correlater.get.bind(correlater)
-} else {
-  // check to see if we are still in a differint namespace
-  Object.keys(process.namespaces)
-        .forEach(cid => {
-
-    // find the active namespace
-    if(!! process.namespaces[cid].active){
-      const correlater = cls.getNamespace(cid)
-      getCorrelaterValue = correlater.get.bind(correlater)
-      lastActiveNamespace = cid;
-    } else if(0 === process.namespaces[cid]._contexts.size && inUse[cid] ){
-      // if used + no more context => garbage collecte
-      cls.destroyNamespace(cid);
-      delete inUse[cid];
-    } else if(! inUse[cid]) {
-      // add to the inuse if new
-      inUse[cid] = true
-    }
-
-  })// END namespaces.forEach
-
-} // END else
-
-    if( ! gitValues){
-      logBuffer.push({
-        err,
-        vals,
-        message,
-        level,
-        opts:{
-          time:new Date(),
-          stack:new Error().stack,
-          correlationId:getCorrelaterValue('correlationId'),
-          correlationName:getCorrelaterValue('correlationName')
-        }
-      })
-      return;
-    }// END if( ! gitValues)
+    let correlaterValue = myNamespace()
 
     // we are in the pcress of flushing old messages
-    const { time, stack, correlationId, correlationName } = flushingBuffer ? arguments[4] : { correlationId:getCorrelaterValue('correlationId'), correlationName:getCorrelaterValue('correlationName') };
+    const traceId = correlaterValue('traceId');
+    const traceLabel = correlaterValue('traceLabel');
 
     const isErr = err instanceof Error;
   //  const level = isErr ? "error" : level || this.level || "log"
@@ -90,10 +94,12 @@ if( lastActiveNamespace && process.namespaces[lastActiveNamespace].active){
                            : undefined
 
     const body = {
-
+      // if we are in a trace, then the traceId will be populated
+      // and we can use lastActiveNamespace to get the cuid
+      cuid: traceId && lastActiveNamespace,
       message:         isErr && message ? message     : err.message || err,
       originalMessage: isErr && message ? err.message : undefined,
-      level,
+      level, hostname,
       branch:gitValues.branch,
       repo:gitValues.repo,
       pTitle : process.title,
@@ -104,38 +110,35 @@ if( lastActiveNamespace && process.namespaces[lastActiveNamespace].active){
       arch: process.arch,
       platform: process.platform,
       vals,
-      correlationId:correlationId?correlationId:undefined,
-      correlationName:correlationName?correlationName:undefined,
+      traceId,
+      traceLabel,
       mode:config.mode,
-      from:getSource(flushingBuffer ? stack : new Error().stack),
+      from:getSource(new Error().stack),
                           // remove the message line from trace
                           // as its in the "originalMessage" field
       stackTrace: message ? stackTrace.splice(1)
                           : stackTrace, // if there is no message the
       gitHash: gitValues.short,
-      time: flushingBuffer ? time : new Date(),
+      time: new Date(),
       toString : function(){
         const time  = moment(body.time).format(config.time);
-        const logLevel = body.level;
-
-        const fileName   = body.from.file;
-        const lineNumber = body.from.line;
-        const exeType    = body.from.type;
-        const mode       = body.mode
-        const repo       = body.repo
-        const branch     = body.branch
-        const gitHash    = body.gitHash
 
         const outputMessage    = message || err.message || err;
         const outputValue      = "object" === typeof vals ? JSON.stringify(vals) : '';
         const outputStackTrace = isErr ? "\n"+stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
         // based on: https://www.npmjs.com/package/tracer
-        return format(config.format,{ repo,       mode,
-                                      branch,     time,
-                                      gitHash,    logLevel,
-                                      fileName,   lineNumber,
-                                      exeType,    correlationId,
+        return format(config.format,{ repo: body.repo,
+                                      mode: body.mode,
+                                      branch: body.branch,
+                                      time, hostname,
+                                      cuid: body.cuid,
+                                      gitHash: body.gitHash,
+                                      logLevel: body.level,
+                                      fileName: body.from.file,
+                                      lineNumber: body.from.line,
+                                      exeType: body.from.type,
+                                      traceId, traceLabel,
                                       message : outputMessage,
                                       value : outputValue,
                                       pTitle : process.title,
@@ -146,7 +149,7 @@ if( lastActiveNamespace && process.namespaces[lastActiveNamespace].active){
                                       arch: process.arch,
                                       platform: process.platform,
                                       stackTrace : outputStackTrace,
-                                    correlationName})
+                                    })
       }
     } // END body
 
@@ -163,8 +166,9 @@ if( lastActiveNamespace && process.namespaces[lastActiveNamespace].active){
       }
       stdOut(body.toString())
     } // END if config.stdOut
-
-    config.dataOut && config.dataOut(Object.assign({},body,{time : moment(body.time).format(config.time)}))
+    const dataBody = Object.assign({},body,{time : moment(body.time).format(config.time)})
+    config.dataOut && config.dataOut(dataBody)
+    return body;
   }// END scribble
 
 
@@ -206,26 +210,103 @@ let config = {
   stdOut: console,
   dataOut : undefined,
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} [{correlationName} {correlationId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
+  format:`{repo}:{mode}:{branch} [{label} {cuid}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
 }
 
+traceCount = 1;
 
+scribbles.trace = function trace(opts, next){
 
+  let traceId, traceLabel, tracestate;
 
-scribbles.correlate = function correlate(name, next){
-
-  if('function' === typeof name){
-    next = name;
-    name = '';
+  if('object' === typeof opts){
+    traceLabel = opts.traceLabel
+    traceId = opts.traceId
+    tracestate = 'string' === typeof opts.tracestate
+                  && "" !== opts.tracestate ? parceTracestate(opts.tracestate)
+                                            : opts.tracestate // this maybe undefined
+  } else if('string' === typeof opts){
+    traceLabel = opts
+  } else if('function' === typeof opts){
+    next = opts;
   }
-  const correlationId = uuidGen().toUpperCase();
-  const correlater = createNamespace(correlationId)
 
-  correlater.run(()=>{
-    correlater.set('correlationId', correlationId);
-    correlater.set('correlationName', name);
-      next(correlationId)
+  if( ! traceId){
+    traceId = crypto.randomBytes(16).toString('hex');
+  }
+
+  if( ! tracestate){
+    tracestate = []
+  }
+
+  const parentId = crypto.randomBytes(8).toString('hex');
+  const cuid = cuidPrefix+crockford32(("000000" + traceCount.toString(32)) // Max value of 32,073,741,823
+                 .slice(-7))
+
+  traceCount++;
+
+
+  tracestate = tracestate.filter(parent=> currentVendor !== parent.vendor)
+  tracestate.unshift({vendor:currentVendor,opaque:(new Buffer(parentId)).toString('base64')})
+
+  const trace = createNamespace(cuid)
+  trace.run(()=>{
+              trace.set('traceId', traceId);
+              trace.set('parentId', parentId);
+              trace.set('tracestate', tracestate);
+    if(traceLabel){ trace.set('traceLabel', traceLabel); }
+    next(cuid)
   })
+} // END trace
+
+//=====================================================
+//=================================== Trace Context W3C
+//=====================================================
+
+scribbles.trace.header = function traceContext(){
+
+  const correlaterValue = myNamespace()
+  const traceId = correlaterValue('traceId')
+  const parentId = correlaterValue('parentId')
+  const tracestate = correlaterValue('tracestate');
+  return {
+    traceparent:`00-${traceId}-${parentId}-01`,
+    tracestate:tracestate.reduce((arr, [vendor,opaque]) => {
+        arr.push(`${vendor}=${opaque}`);
+        return arr;
+      },[]).join()
+  }
+}
+
+function parceTracestate(tracestate){
+  return tracestate.split(',')
+            .reduce((accumulator, currentValue)=>{
+                  const [vendor, opaque] = currentValue.split('=')
+                  accumulator.push({vendor,opaque})
+                  return accumulator
+              },[])
+}
+
+scribbles.updateTracestate = function updateTracestate(incomingTraceState){
+
+  const correlaterValue = myNamespace()
+  const parentId = crypto.randomBytes(8).toString('hex');
+  let tracestate = parceTracestate(incomingTraceState)
+      tracestate = tracestate.filter(parent=> currentVendor !== parent.vendor)
+      tracestate.unshift({vendor:currentVendor,opaque:(new Buffer(parentId)).toString('base64')})
+
+  //update
+  correlaterValue('parentId', parentId);
+  correlaterValue('tracestate', tracestate);
+} // updateTracestate
+
+
+//=====================================================
+//==================================== Scribbles Config
+//=====================================================
+
+function crockford32(base32){
+  return base32.split('').map(char => crockford[parseInt(char,32)] ).join('')
 }
 
 //=====================================================
@@ -264,6 +345,3 @@ scribbles.config = function scribblesConfig(opts){
 } // END scribblesConfig
 
 scribbles.config()
-
-
-function uuidGen(a){return a?(a^Math.random()*16>>a/4).toString(32):([1e4]+1e2).replace(/[018]/g,uuidGen)}
