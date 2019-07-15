@@ -75,6 +75,8 @@ function scribble(level, err, vals, message){
     // we are in the pcress of flushing old messages
     const traceId = correlaterValue('traceId');
     const traceLabel = correlaterValue('traceLabel');
+    const parentId = correlaterValue('parentId');
+    const tracestate = correlaterValue('tracestate');
 
     const isErr = err instanceof Error;
   //  const level = isErr ? "error" : level || this.level || "log"
@@ -107,7 +109,9 @@ function scribble(level, err, vals, message){
       // and we can use lastActiveNamespace to get the cuid
         cuid: traceId && lastActiveNamespace,
         traceLabel,
-        traceId
+        traceId,
+        parentId,
+        tracestate
       },
       info:{
         time: new Date(),
