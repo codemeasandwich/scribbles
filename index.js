@@ -19,8 +19,8 @@ let appDir = path.dirname(require.main.filename);
     appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 let traceCount = 0, lastActiveSpan;
 const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
-                             + process.ppid.toString(15).slice(-2)
-                             + process. pid.toString(15).slice(-2)
+                             + process.ppid.toString(16).slice(-2)
+                             + process. pid.toString(16).slice(-2)
                              + Math.floor(Math.random() * 15).toString(16))
 
 const hostname = os.hostname()
@@ -72,9 +72,9 @@ function scribble(level, err, vals, message){
     let correlaterValue = myNamespace()
 
     // we are in the pcress of flushing old messages
-    const traceId = correlaterValue('traceId');
-    const spanLabel = correlaterValue('spanLabel');
-    const spanId = correlaterValue('spanId');
+    const traceId    = correlaterValue('traceId');
+    const spanLabel  = correlaterValue('spanLabel');
+    const spanId     = correlaterValue('spanId');
     const tracestate = correlaterValue('tracestate');
 
     const isErr = err instanceof Error;
@@ -97,7 +97,6 @@ function scribble(level, err, vals, message){
     const from = getSource(new Error().stack)
 
     const body = {
-
       git:{
         repo:gitValues.repo,
         branch:gitValues.branch,
@@ -130,12 +129,12 @@ function scribble(level, err, vals, message){
                             : stackTrace // if there is no message the
       },
       process:{
-        pTitle : process.title,
-        pid: process.pid,
-        ppid: process.ppid,
-        user : process.env.USER,
-        vNode: process.version,
-        arch: process.arch,
+        pTitle :  process.title,
+        pid:      process.pid,
+        ppid:     process.ppid,
+        user :    process.env.USER,
+        vNode:    process.version,
+        arch:     process.arch,
         platform: process.platform
       },
       toString : function(){
@@ -221,8 +220,8 @@ scribbles.trace = function trace(opts, next){
   let traceId, spanLabel, tracestate;
 
   if('object' === typeof opts){
-    spanLabel = opts.spanLabel
-    traceId = opts.traceId
+    spanLabel  = opts.spanLabel
+    traceId    = opts.traceId
     tracestate = 'string' === typeof opts.tracestate
                   && "" !== opts.tracestate ? parceTracestate(opts.tracestate)
                                             : opts.tracestate // this maybe undefined
