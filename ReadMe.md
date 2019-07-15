@@ -9,7 +9,7 @@
 Scribbles has some nice features.
 
 * [customised output](#how-to-customise-log-output)
-* [tracing logs](#how-to-trace-logs)
+* [tracing logs](#how-to-trace-logs) respect the [w3c standard](https://www.w3.org/TR/trace-context/)
 * more insight
   * git repository name
   * current branch
@@ -119,21 +119,24 @@ To use the trace system you only need to pass in a root function that acts as th
 scribbles.trace([label/opt,]next_fu)
 ```
 
-:dizzy: The first argument can be an options object. Here you can specify a *"label"* to tag your entries and an *"id"* to be used as the traceId. This can be used when wanting to **trace across microservices**. In this pattern a shared Ids is normally pasted in the `header` of the request. You can set this as the `traceId` so your logs will reflect this distributed Id.
+The first argument to can be an options object. Here you can specify a `spanLabel` to tag your entries, a`traceId` & the `tracestate` that are using in distributed tracing.
 
-**Example:**
+### Tracing a path within your service
 
 *index.js*
 ```js
 // for fun lets set a custom format for our logs
-scribbles.config({format:`[{traceName} {traceId}] {message}`})
+scribbles.config({format:`[{traceName} {spanId}] {message}`})
 
 // an example of an event handler
 function incoming(dataIn){
   // wrap the work we want to do in `scribbles.trace`
-  scribbles.trace("eventstream",(traceId)=>{
-    // kick of the work
-    workToDo(dataIn);
+  scribbles.trace("eventstream",(spanId)=>{
+
+    // Event message logged from with here will have this correlation ID
+    // spanId = 090e8e40000005
+
+    workToDo(dataIn); // kick of the work
   })
 }
 ```
@@ -146,16 +149,49 @@ function workToDo(dataIn){
   scribbles.log("Doing something with the eventstream")
   // [eventstream 090e8e40000005] Doing something with the eventstream
   // ...
-
-  // If you want to call another service you can get the trace header
-  scribbles.trace.header()
-  // {
-  //   traceparent: '00-962ceea8a01df78f9663df841d2fd8e6-090e8e40000005-01',
-  //   tracestate: 'scribbles=CQ6OQAAABQ'
-  // }
 }
 ```
 
+### Tracing across your micro-services.
+in accordance with [W3C trace-context](https://www.w3.org/TR/trace-context/)
+
+This is an express **BUT** can be used in any other framework :blush:
+
+```js
+// start a trace for each incoming request.
+// if the request is part of a larger sequence
+// pull the traceparent from the header
+function correlateMiddleware({headers}, res, next){
+  scribbles.trace({
+    // this traceId is embedded within the traceparent
+    traceId:headers.traceparent && headers.traceparent.split('-')[1],
+    tracestate:headers.tracestate,
+
+    // lets tag the current trace/span with the caller's IP
+    spanLabel:headers['x-forwarded-for']
+  },() => next())
+}
+
+app.get('/', correlateMiddleware, function (req, res){
+
+  scribbles.log("doing stuff")
+  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 (Object.<anonymous>) doing stuff
+  // lets call anoher service
+  http.request({
+    hostname: 'localhost',
+    port: 3001,
+    path: '/',
+    method: 'POST',
+
+    // To continue the trace to the next micro-service.
+    // We just need to send on the generated headers
+    headers: scribbles.trace.headers(), // { traceparent: '...', tracestate:'...'},
+   (res) => {
+    scribbles.log(`statusCode: ${res.statusCode}`)
+  })
+
+}
+```
 
 ---
 
