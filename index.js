@@ -7,7 +7,7 @@ const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
 
-const currentVendor = 'scribbles'
+const defaultVendor = 'scribbles'
 const crockford = "0123456789ABCDEFGHJKMNPQRTUVWXYZ"
 const gitValues = {
   short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
@@ -93,34 +93,54 @@ function scribble(level, err, vals, message){
                                       })
                            : undefined
 
+    const from = getSource(new Error().stack)
+
     const body = {
+
+      git:{
+        repo:gitValues.repo,
+        branch:gitValues.branch,
+        gitHash: gitValues.short
+      },
+      trace:{
       // if we are in a trace, then the traceId will be populated
       // and we can use lastActiveNamespace to get the cuid
-      cuid: traceId && lastActiveNamespace,
-      message:         isErr && message ? message     : err.message || err,
-      originalMessage: isErr && message ? err.message : undefined,
-      level, hostname,
-      branch:gitValues.branch,
-      repo:gitValues.repo,
-      pTitle : process.title,
-      pid: process.pid,
-      ppid: process.ppid,
-      user : process.env.USER,
-      vNode: process.version,
-      arch: process.arch,
-      platform: process.platform,
-      vals,
-      traceId,
-      traceLabel,
-      mode:config.mode,
-      from:getSource(new Error().stack),
-                          // remove the message line from trace
-                          // as its in the "originalMessage" field
-      stackTrace: message ? stackTrace.splice(1)
-                          : stackTrace, // if there is no message the
-      gitHash: gitValues.short,
-      time: new Date(),
+        cuid: traceId && lastActiveNamespace,
+        traceLabel,
+        traceId
+      },
+      info:{
+        time: new Date(),
+        mode:config.mode,
+        logLevel:level
+      },
+      context:{
+        fileName: from.file,
+        lineNumber: from.line,
+        exeType: from.type
+      },
+      input:{
+        message:         isErr && message ? message     : err.message || err,
+        originalMessage: isErr && message ? err.message : undefined,
+        value:vals,
+                            // remove the message line from trace
+                            // as its in the "originalMessage" field
+        stackTrace: message ? stackTrace.splice(1)
+                            : stackTrace // if there is no message the
+      },
+      process:{
+        pTitle : process.title,
+        pid: process.pid,
+        ppid: process.ppid,
+        user : process.env.USER,
+        vNode: process.version,
+        arch: process.arch,
+        platform: process.platform
+      },
       toString : function(){
+
+        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{})
+
         const time  = moment(body.time).format(config.time);
 
         const outputMessage    = message || err.message || err;
@@ -128,28 +148,7 @@ function scribble(level, err, vals, message){
         const outputStackTrace = isErr ? "\n"+stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
         // based on: https://www.npmjs.com/package/tracer
-        return format(config.format,{ repo: body.repo,
-                                      mode: body.mode,
-                                      branch: body.branch,
-                                      time, hostname,
-                                      cuid: body.cuid,
-                                      gitHash: body.gitHash,
-                                      logLevel: body.level,
-                                      fileName: body.from.file,
-                                      lineNumber: body.from.line,
-                                      exeType: body.from.type,
-                                      traceId, traceLabel,
-                                      message : outputMessage,
-                                      value : outputValue,
-                                      pTitle : process.title,
-                                      pid: process.pid,
-                                      ppid: process.ppid,
-                                      user : process.env.USER,
-                                      vNode: process.version,
-                                      arch: process.arch,
-                                      platform: process.platform,
-                                      stackTrace : outputStackTrace,
-                                    })
+        return format(config.format,Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
       }
     } // END body
 
@@ -209,6 +208,7 @@ let config = {
   levels:["error", "warn", "log", "info", "debug"],
   stdOut: console,
   dataOut : undefined,
+  vendor:defaultVendor,
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
   format:`{repo}:{mode}:{branch} [{label} {cuid}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
 }
@@ -246,8 +246,8 @@ scribbles.trace = function trace(opts, next){
   traceCount++;
 
 
-  tracestate = tracestate.filter(parent=> currentVendor !== parent.vendor)
-  tracestate.unshift({vendor:currentVendor,opaque:(new Buffer(parentId)).toString('base64')})
+  tracestate = tracestate.filter(parent=> config.vendor !== parent.vendor)
+  tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(parentId)})
 
   const trace = createNamespace(cuid)
   trace.run(()=>{
@@ -269,9 +269,10 @@ scribbles.trace.header = function traceContext(){
   const traceId = correlaterValue('traceId')
   const parentId = correlaterValue('parentId')
   const tracestate = correlaterValue('tracestate');
+  console.log(tracestate)
   return {
     traceparent:`00-${traceId}-${parentId}-01`,
-    tracestate:tracestate.reduce((arr, [vendor,opaque]) => {
+    tracestate:tracestate.reduce((arr, {vendor,opaque}) => {
         arr.push(`${vendor}=${opaque}`);
         return arr;
       },[]).join()
@@ -292,8 +293,8 @@ scribbles.updateTracestate = function updateTracestate(incomingTraceState){
   const correlaterValue = myNamespace()
   const parentId = crypto.randomBytes(8).toString('hex');
   let tracestate = parceTracestate(incomingTraceState)
-      tracestate = tracestate.filter(parent=> currentVendor !== parent.vendor)
-      tracestate.unshift({vendor:currentVendor,opaque:(new Buffer(parentId)).toString('base64')})
+      tracestate = tracestate.filter(parent=> config.vendor !== parent.vendor)
+      tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(parentId)})
 
   //update
   correlaterValue('parentId', parentId);
@@ -301,17 +302,18 @@ scribbles.updateTracestate = function updateTracestate(incomingTraceState){
 } // updateTracestate
 
 
-//=====================================================
-//==================================== Scribbles Config
-//=====================================================
-
 function crockford32(base32){
   return base32.split('').map(char => crockford[parseInt(char,32)] ).join('')
 }
 
-//=====================================================
-//==================================== Scribbles Config
-//=====================================================
+function hexToBase64(str) {
+
+  const btoa = (str) => new Buffer(str, 'binary').toString('base64');
+
+  return btoa(String.fromCharCode.apply(null,
+    str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" "))
+  ).slice(0, -1);
+}
 
 scribbles.config = function scribblesConfig(opts){
 
