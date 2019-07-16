@@ -276,7 +276,7 @@ scribbles.trace = function trace(opts, next){
 //=================================== Trace Context W3C
 //=====================================================
 
-scribbles.trace.header = function traceContext(){
+scribbles.trace.headers = function traceContext(){
 
   const correlaterValue = myNamespace()
   const traceId = correlaterValue('traceId')
