@@ -60,7 +60,9 @@ There is a `config` that takes a configuration object.
   * trace:  
     * `traceId`: Used for distributed tracing in microservices [**[more](https://www.w3.org/TR/trace-context/#trace-id)**]
     * `spanId`: the execution of a client call [**[more](https://www.w3.org/TR/trace-context/#parent-id)**]
+    * `span64`: the base64 encoded version of `spanId`
     * `spanLabel`: A label to identify this trace
+    * `tracestate`: Ordered list of key/value hops
   * info:
     * `time`: Time of logging
     * `logLevel`: The logging level for this entry

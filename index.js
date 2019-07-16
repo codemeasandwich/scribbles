@@ -7,13 +7,14 @@ const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
 
-const defaultVendor = 'scribbles'
 
 const gitValues = {
   short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
   repo:exec('basename -s .git `git config --get remote.origin.url`',{ encoding: 'utf8' }).trim(),
   branch:exec('git rev-parse --abbrev-ref HEAD',{ encoding: 'utf8' }).trim()
 };
+
+const defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 
 let appDir = path.dirname(require.main.filename);
     appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
@@ -75,6 +76,7 @@ function scribble(level, err, vals, message){
     const traceId    = correlaterValue('traceId');
     const spanLabel  = correlaterValue('spanLabel');
     const spanId     = correlaterValue('spanId');
+    const span64     = correlaterValue('span64');
     const tracestate = correlaterValue('tracestate');
 
     const isErr = err instanceof Error;
@@ -105,6 +107,7 @@ function scribble(level, err, vals, message){
       trace:{
         traceId,
         spanId,
+        span64,
         spanLabel,
         tracestate
       },
@@ -180,10 +183,10 @@ function scribble(level, err, vals, message){
 
 function getSource(stack){
 
-    var originFile = stack.split('\n')[2].split('/');
-    var file = originFile[originFile.length - 1].split(':')[0];
-    var line = originFile[originFile.length - 1].split(':')[1];
-    var path = originFile.splice(1).join('/')
+    const originFile = stack.split('\n')[2].split('/');
+    const file = originFile[originFile.length - 1].split(':')[0];
+    const line = originFile[originFile.length - 1].split(':')[1];
+    let path = originFile.splice(1).join('/')
         path = path[path.length - 1] === ')' ? path.substring(0, path.length - 1) : path;
         path = path.startsWith(appDir) ? path.substr(appDir.length+1) : "/"+path
     return {
@@ -221,11 +224,23 @@ scribbles.trace = function trace(opts, next){
 
   if('object' === typeof opts){
     spanLabel  = opts.spanLabel
+
+    //TODO: test if opts.traceId is xx-xxxx-xxx-xx
+    // traceparent
+
+    //TODO: test if opts.traceId is xxxx
+    // traceId
     traceId    = opts.traceId
     tracestate = 'string' === typeof opts.tracestate
                   && "" !== opts.tracestate ? parceTracestate(opts.tracestate)
                                             : opts.tracestate // this maybe undefined
   } else if('string' === typeof opts){
+    //TODO: test if xx-xxxx-xxx-xx
+    // traceparent
+
+    //TODO: test if xxxx
+    // traceId
+
     spanLabel = opts
   } else if('function' === typeof opts){
     next = opts;
@@ -243,13 +258,14 @@ scribbles.trace = function trace(opts, next){
 
   traceCount++;
 
-  tracestate = tracestate.filter(span=> config.vendor !== span.vendor)
-  tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(spanId)})
+//  tracestate = tracestate.filter(span=> config.vendor !== span.key)
+//  tracestate.unshift({key:config.vendor,value:hexToBase64(spanId)})
 
   const trace = createNamespace(spanId)
   trace.run(()=>{
               trace.set('traceId', traceId);
               trace.set('spanId', spanId);
+              trace.set('span64', hexToBase64(spanId));
               trace.set('tracestate', tracestate);
     if(spanLabel){ trace.set('spanLabel', spanLabel); }
     next(spanId)
@@ -265,38 +281,26 @@ scribbles.trace.header = function traceContext(){
   const correlaterValue = myNamespace()
   const traceId = correlaterValue('traceId')
   const spanId = correlaterValue('spanId')
-  const tracestate = correlaterValue('tracestate');
+  const span64 = correlaterValue('span64')
+  const tracestate = correlaterValue('tracestate').filter(span=> config.vendor !== span.key)
 
   return {
     traceparent:`00-${traceId}-${spanId}-01`,
-    tracestate:tracestate.reduce((arr, {vendor,opaque}) => {
-        arr.push(`${vendor}=${opaque}`);
+    tracestate:tracestate.reduce((arr, {key,value}) => {
+        arr.push(`${key}=${value}`);
         return arr;
-      },[]).join()
+      },[`${config.vendor}=${span64}`]).slice(0,32).join()
   }
 }
 
 function parceTracestate(tracestate){
   return tracestate.split(',')
             .reduce((accumulator, currentValue)=>{
-                  const [vendor, opaque] = currentValue.split('=')
-                  accumulator.push({vendor,opaque})
+                  const [key, value] = currentValue.split('=')
+                  accumulator.push({key,value})
                   return accumulator
               },[])
 }
-
-scribbles.updateTracestate = function updateTracestate(incomingTraceState){
-
-  const correlaterValue = myNamespace()
-  const spanId = crypto.randomBytes(8).toString('hex');
-  let tracestate = parceTracestate(incomingTraceState)
-      tracestate = tracestate.filter(span=> config.vendor !== span.vendor)
-      tracestate.unshift({vendor:config.vendor,opaque:hexToBase64(spanId)})
-
-  //update
-  correlaterValue('spanId', spanId);
-  correlaterValue('tracestate', tracestate);
-} // updateTracestate
 
 function hexToBase64(str) {
 
