@@ -84,11 +84,8 @@ function scribble(level, err, vals, message){
     } // END if is a basic value
 
     const stackTrace = isErr ? err.stack.split("\n")
-                                      .splice(message ? 0 : 1)// if there is a custom message leave the original in the trace
-                                      .map((line,index) => {
-                                        // if its the first line && we have an custom message ? just return the raw line.
-                                        return 0 === index && message ? line : line.split("at").pop().trim()
-                                      })
+                                      .slice(1)// if there is a custom message leave the original in the trace
+                                      .map((line) => line.split(/at(.+)/)[1].trim() )
                            : undefined
 
     const from = getSource(new Error().stack)
@@ -123,8 +120,7 @@ function scribble(level, err, vals, message){
         value:vals,
                             // remove the message line from trace
                             // as its in the "originalMessage" field
-        stackTrace: message ? stackTrace.splice(1)
-                            : stackTrace // if there is no message the
+        stackTrace
       },
       process:{
         pTitle :  process.title,
@@ -143,7 +139,7 @@ function scribble(level, err, vals, message){
 
         const outputMessage    = message || err.message || err;
         const outputValue      = "object" === typeof vals ? JSON.stringify(vals) : '';
-        const outputStackTrace = isErr ? "\n"+stackTrace.map(line => ` at ${line}`).join("\n") : "";
+        const outputStackTrace = isErr ? "\n"+( message ? "Error: "+err.message+"\n":"")+all.stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
         // based on: https://www.npmjs.com/package/tracer
         return format(config.format,Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
