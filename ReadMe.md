@@ -194,6 +194,7 @@ app.get('/', correlateMiddleware, function (req, res){
 
 }
 ```
+The `tracestate` lists each hop/service the request has flown through, regardless of who owns that service.
 
 ---
 
@@ -203,3 +204,4 @@ Todo:
 * Allow for coloured logs
 * Support console.group
 * Allow custom json parser for `input values`
+* a proxy that sits at the edge of your infrastructure swapping header tracestate with a lookup hash.

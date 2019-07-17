@@ -6,7 +6,7 @@ const os = require('os');
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
-
+const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
 const gitValues = {
   short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
@@ -72,12 +72,7 @@ function scribble(level, err, vals, message){
 
     let correlaterValue = myNamespace()
 
-    // we are in the pcress of flushing old messages
-    const traceId    = correlaterValue('traceId');
-    const spanLabel  = correlaterValue('spanLabel');
-    const spanId     = correlaterValue('spanId');
-    const span64     = correlaterValue('span64');
-    const tracestate = correlaterValue('tracestate');
+    const { traceId, spanId, span64, tracestate, spanLabel } = correlaterValue('traceVals') || {};
 
     const isErr = err instanceof Error;
   //  const level = isErr ? "error" : level || this.level || "log"
@@ -220,55 +215,51 @@ traceCount = 1;
 
 scribbles.trace = function trace(opts, next){
 
-  let traceId, spanLabel, tracestate;
+  const traceVals = {};
 
   if('object' === typeof opts){
     spanLabel  = opts.spanLabel
 
-    //TODO: test if opts.traceId is xx-xxxx-xxx-xx
-    // traceparent
+    if(opts.traceId){
+      if(regxTraceparent.test(opts.traceId)){
+        const [version,traceId,parentId,flag] = opts.traceId.split('-')
+        traceVals = {version,traceId,parentId,flag}
+      } else {
+        traceVals.traceId = opts.traceId
+      }
+    }
+    traceVals.spanLabel  = opts.spanLabel
 
-    //TODO: test if opts.traceId is xxxx
-    // traceId
-    traceId    = opts.traceId
-    tracestate = 'string' === typeof opts.tracestate
+    traceVals.tracestate = 'string' === typeof opts.tracestate
                   && "" !== opts.tracestate ? parceTracestate(opts.tracestate)
                                             : opts.tracestate // this maybe undefined
   } else if('string' === typeof opts){
-    //TODO: test if xx-xxxx-xxx-xx
-    // traceparent
 
-    //TODO: test if xxxx
-    // traceId
-
-    spanLabel = opts
+    traceVals.spanLabel = opts
   } else if('function' === typeof opts){
     next = opts;
   }
 
-  if( ! traceId){
-    traceId = crypto.randomBytes(16).toString('hex');
+  if( ! traceVals.traceId){
+    traceVals.traceId = crypto.randomBytes(16).toString('hex');
   }
 
-  if( ! tracestate){
-    tracestate = []
+  if( ! traceVals.tracestate){
+    traceVals.tracestate = []
   }
 
-  const spanId = cuidPrefix+("00000000" + traceCount.toString(16)).slice(-9)
+  traceVals.spanId = cuidPrefix+("00000000" + traceCount.toString(16)).slice(-9)
+  traceVals.span64 = Buffer.from(traceVals.spanId, 'hex').toString('base64').slice(0, -1)
 
   traceCount++;
 
 //  tracestate = tracestate.filter(span=> config.vendor !== span.key)
 //  tracestate.unshift({key:config.vendor,value:hexToBase64(spanId)})
 
-  const trace = createNamespace(spanId)
+  const trace = createNamespace(traceVals.spanId)
   trace.run(()=>{
-              trace.set('traceId', traceId);
-              trace.set('spanId', spanId);
-              trace.set('span64', hexToBase64(spanId));
-              trace.set('tracestate', tracestate);
-    if(spanLabel){ trace.set('spanLabel', spanLabel); }
-    next(spanId)
+    trace.set('traceVals', traceVals);
+    next(traceVals.spanId)
   })
 } // END trace
 
@@ -279,19 +270,18 @@ scribbles.trace = function trace(opts, next){
 scribbles.trace.headers = function traceContext(){
 
   const correlaterValue = myNamespace()
-  const traceId = correlaterValue('traceId')
-  const spanId = correlaterValue('spanId')
-  const span64 = correlaterValue('span64')
-  const tracestate = correlaterValue('tracestate').filter(span=> config.vendor !== span.key)
+
+  const { traceId, spanId, span64, tracestate, version,flag } = correlaterValue('traceVals') || {};
 
   return {
-    traceparent:`00-${traceId}-${spanId}-01`,
-    tracestate:tracestate.reduce((arr, {key,value}) => {
+    traceparent:`${version||'00'}-${traceId}-${spanId}-${flag||'01'}`,
+    tracestate:tracestate.filter(span=> config.vendor !== span.key)
+    .reduce((arr, {key,value}) => {
         arr.push(`${key}=${value}`);
         return arr;
       },[`${config.vendor}=${span64}`]).slice(0,32).join()
   }
-}
+} // END traceContext
 
 function parceTracestate(tracestate){
   return tracestate.split(',')
@@ -300,16 +290,7 @@ function parceTracestate(tracestate){
                   accumulator.push({key,value})
                   return accumulator
               },[])
-}
-
-function hexToBase64(str) {
-
-  const btoa = (str) => new Buffer(str, 'binary').toString('base64');
-
-  return btoa(String.fromCharCode.apply(null,
-    str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" "))
-  ).slice(0, -1);
-}
+} // END parceTracestate
 
 scribbles.config = function scribblesConfig(opts){
 
