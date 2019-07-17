@@ -85,6 +85,7 @@ function scribble(level, err, vals, message){
 
     const stackTrace = isErr ? err.stack.split("\n")
                                       .slice(1)// if there is a custom message leave the original in the trace
+                                      .filter( line => !!line) // some stacks may have an extra empty line
                                       .map((line) => line.split(/at(.+)/)[1].trim() )
                            : undefined
 
