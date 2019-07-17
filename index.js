@@ -160,8 +160,8 @@ function scribble(level, err, vals, message){
       }
       stdOut(body.toString())
     } // END if config.stdOut
-    const dataBody = Object.assign({},body,{time : moment(body.time).format(config.time)})
-    config.dataOut && config.dataOut(dataBody)
+    //const dataBody = Object.assign({},body,{time : moment(body.time).format(config.time)})
+    config.dataOut && config.dataOut(body)//(dataBody)
     return body;
   }// END scribble
 
