@@ -97,7 +97,34 @@ There is a `config` that takes a configuration object.
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
 
-Example:
+### Example:
+
+Via **package.json**
+
+Just add a "scribbles" attribute
+
+```json
+{
+  "name": "myrepo",
+  "version": "0.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+
+  },
+  "scribbles":{
+     "mode":"test-runner",
+     "logLevel":"warn",
+     "levels":["danger", "error", "warn", "log", "info", "debug"],
+     "format":"{time} [{mode}#{gitHash}] <{logLevel}> {message}"
+  }
+}
+```
+
+Via **.config(...) function**
+
 ```js
 scribbles.config({
    mode:'test-runner',

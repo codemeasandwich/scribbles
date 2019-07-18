@@ -16,6 +16,7 @@ const path = require('path');
 const moment = require('moment')
 const crypto = require('crypto')
 const os = require('os');
+const fs = require("fs");
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
@@ -356,3 +357,10 @@ scribbles.config = function scribblesConfig(opts){
 } // END scribblesConfig
 
 scribbles.config()
+
+if(fs.existsSync(__dirname+'/../../package.json')){
+  const packageJson = require('../../package.json');
+  if(packageJson.scribbles){
+    scribbles.config(packageJson.scribbles)
+  }
+}
