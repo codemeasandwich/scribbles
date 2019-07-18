@@ -1,3 +1,16 @@
+
+(function(){
+  var v = process.version.split('.');
+  var ver = +(v[0].slice(1))
+  var fe = +v[1];
+  var bug = +v[2];
+  if(8 > ver
+  || 8 === ver && 2 > fe
+  || 8 === ver && 2 === fe && 1 > bug ){
+    throw new Error("Scribbles needs node v8.2.1 or higher. You are running "+process.version)
+  }
+})()
+
 const format = require("string-template");
 const path = require('path');
 const moment = require('moment')
@@ -19,12 +32,13 @@ const defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 let appDir = path.dirname(require.main.filename);
     appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 let traceCount = 0, lastActiveSpan;
+const hostname = os.hostname(), defaultPpid = 0;
 const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
-                             + process.ppid.toString(16).slice(-2)
+                             + (process.ppid||defaultPpid).toString(16).slice(-2)
                              + process. pid.toString(16).slice(-2)
                              + Math.floor(Math.random() * 15).toString(16))
 
-const hostname = os.hostname()
+
 
 function myNamespace(){
 
@@ -126,7 +140,7 @@ function scribble(level, err, vals, message){
       process:{
         pTitle :  process.title,
         pid:      process.pid,
-        ppid:     process.ppid,
+        ppid:     process.ppid || defaultPpid,
         user :    process.env.USER,
         vNode:    process.version,
         arch:     process.arch,

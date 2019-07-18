@@ -2,7 +2,7 @@
 
 # Scribbles
 
-**scribbles** is a node console out formatter inspired by [tracer](https://www.npmjs.com/package/tracer)
+**scribbles** is a log and tracing lib for NodeJs
 
 [![npm version](https://badge.fury.io/js/scribbles.svg)](https://www.npmjs.com/package/scribbles) [![Buy me a coffee](https://img.shields.io/badge/buy%20me-a%20coffee-orange.svg)](https://www.buymeacoffee.com/codemeasandwich)
 
@@ -19,6 +19,8 @@ Scribbles has some nice features.
   * environment: local / dev / prod
 
 ## How to install
+
+You should be running **node > v8.2.1**
 
 ```
 npm install --save scribbles
@@ -164,6 +166,8 @@ Distributed tracing is powerful and makes it easy for developers to find the cau
 🤔 Generating and attaching **trace-context** values to request headers is a standardized way of addressing this problem.
 
 Instrumenting web frameworks, storage clients, application code, etc. to make tracing work out of the box. 🥳
+
+---
 
 This is an express **BUT** can be used in any other framework :blush:
 
