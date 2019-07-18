@@ -6,6 +6,8 @@
 
 [![npm version](https://badge.fury.io/js/scribbles.svg)](https://www.npmjs.com/package/scribbles) [![Buy me a coffee](https://img.shields.io/badge/buy%20me-a%20coffee-orange.svg)](https://www.buymeacoffee.com/codemeasandwich)
 
+### If you like it, [★ it on github](https://github.com/codemeasandwich/scribbles) and share  :beers:
+
 Scribbles has some nice features.
 
 * [customised output](#how-to-customise-log-output)
@@ -157,24 +159,19 @@ function workToDo(dataIn){
 ### Tracing across your micro-services.
 in accordance with [W3C trace-context](https://www.w3.org/TR/trace-context/)
 
+Distributed tracing is powerful and makes it easy for developers to find the causes of issues in highly-distributed microservices applications, as they track how a single interaction was processed across multiple services. But while tracing has exploded in popularity in recent years, there still isn’t much built-in support for it in languages, web frameworks, load balancers, and other components, which can lead to missing components or broken traces.
+
+🤔 Generating and attaching **trace-context** values to request headers is a standardized way of addressing this problem.
+
+Instrumenting web frameworks, storage clients, application code, etc. to make tracing work out of the box. 🥳
+
 This is an express **BUT** can be used in any other framework :blush:
 
 ```js
+const scribbles = require('scribbles');
+
 // start a trace for each incoming request.
-// if the request is part of a larger sequence
-// pull the traceparent from the header
-function correlateMiddleware({headers}, res, next){
-  scribbles.trace({
-    // this traceId is embedded within the traceparent
-    traceId:headers.traceparent && headers.traceparent.split('-')[1],
-    tracestate:headers.tracestate,
-
-    // lets tag the current trace/span with the caller's IP
-    spanLabel:headers['x-forwarded-for']
-  },() => next())
-}
-
-app.get('/', correlateMiddleware, function (req, res){
+app.get('/', scribbles.middleware.express, function (req, res){
 
   scribbles.log("doing stuff")
   // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 (Object.<anonymous>) doing stuff
@@ -195,6 +192,24 @@ app.get('/', correlateMiddleware, function (req, res){
 }
 ```
 The `tracestate` lists each hop/service the request has flown through, regardless of who owns that service.
+
+### If you want to spin you own middleware
+
+
+It may look something like this
+```js
+function traceMiddleware({headers}, res, next){
+  scribbles.trace({
+    // You can pass the traceparent as the traceId
+    // or you can pull the traceId from the traceparent and pass that
+    traceId:headers.traceparent,
+    tracestate:headers.tracestate,
+
+    // lets tag the current trace/span with the caller's IP
+    spanLabel:headers['x-forwarded-for']
+  },(spanId) => next())
+} // END express
+```
 
 ---
 

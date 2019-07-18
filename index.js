@@ -260,6 +260,27 @@ scribbles.trace = function trace(opts, next){
   })
 } // END trace
 
+
+//=====================================================
+//================================ framework middleware
+//=====================================================
+
+scribbles.middleware = {
+
+  // if the request is part of a larger sequence
+  // pull the traceparent from the header
+  express:function correlateMiddleware({headers}, res, next){
+    scribbles.trace({
+      // this traceId is embedded within the traceparent
+      traceId:headers.traceparent && headers.traceparent.split('-')[1],
+      tracestate:headers.tracestate,
+
+      // lets tag the current trace/span with the caller's IP
+      spanLabel:headers['x-forwarded-for']
+    },(spanId) => next())
+  } // END express
+} // END scribbles.middleware
+
 //=====================================================
 //=================================== Trace Context W3C
 //=====================================================
