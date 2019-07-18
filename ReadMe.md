@@ -11,7 +11,7 @@
 Scribbles has some nice features.
 
 * [customised output](#how-to-customise-log-output)
-* [tracing logs](#how-to-trace-logs) respect the [w3c standard](https://www.w3.org/TR/trace-context/)
+* [tracing logs](#how-to-trace-logs) following the [w3c standard](https://www.w3.org/TR/trace-context/)
 * more insight
   * git repository name
   * current branch
