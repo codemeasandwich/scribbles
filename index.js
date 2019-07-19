@@ -230,6 +230,7 @@ scribbles.trace = function trace(opts, next){
   const traceVals = {};
 
   if('object' === typeof opts){
+    traceVals.forward = opts.forward;
     spanLabel  = opts.spanLabel
 
     if(opts.traceId){
@@ -285,11 +286,22 @@ scribbles.middleware = {
   // if the request is part of a larger sequence
   // pull the traceparent from the header
   express:function correlateMiddleware({headers}, res, next){
+
+    let forward = {}
+    if(config.forward){
+      if('string' === typeof config.forward && headers[config.forward]){
+        forward[config.forward] = headers[config.forward]
+      } else if(Array.isArray(config.forward) && 0 < config.forward.length){
+          forward = config.forward.reduce((all,key)=> headers[key] ? Object.assign(all,{[key] : headers[key]})
+                                                                   : all,{})
+      }
+    }
+
     scribbles.trace({
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],
       tracestate:headers.tracestate,
-
+      forward,
       // lets tag the current trace/span with the caller's IP
       spanLabel:headers['x-forwarded-for']
     },(spanId) => next())
@@ -304,16 +316,16 @@ scribbles.trace.headers = function traceContext(customHeader){
 
   const correlaterValue = myNamespace()
 
-  const { traceId, spanId, span64, tracestate, version,flag } = correlaterValue('traceVals') || {};
+  const { traceId, spanId, span64, tracestate, version,flag, forward } = correlaterValue('traceVals') || {};
 
-  return deepMerge({
+  return deepMerge(Object.assign({
     traceparent:`${version||'00'}-${traceId}-${spanId}-${flag||'01'}`,
     tracestate:tracestate.filter(span=> config.vendor !== span.key)
     .reduce((arr, {key,value}) => {
         arr.push(`${key}=${value}`);
         return arr;
       },[`${config.vendor}=${span64}`]).slice(0,32).join()
-  },customHeader)
+  },forward || {}),customHeader)
 } // END traceContext
 
 function parceTracestate(tracestate){

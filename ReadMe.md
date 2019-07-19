@@ -96,8 +96,8 @@ There is a `config` that takes a configuration object.
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
-* **forward** [array]
-  * array of header names to forward
+* **forward** [string/array] - **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
+  * array of header names to forward.
 
 ### Example:
 
