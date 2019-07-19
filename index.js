@@ -300,20 +300,20 @@ scribbles.middleware = {
 //=================================== Trace Context W3C
 //=====================================================
 
-scribbles.trace.headers = function traceContext(){
+scribbles.trace.headers = function traceContext(customHeader){
 
   const correlaterValue = myNamespace()
 
   const { traceId, spanId, span64, tracestate, version,flag } = correlaterValue('traceVals') || {};
 
-  return {
+  return deepMerge({
     traceparent:`${version||'00'}-${traceId}-${spanId}-${flag||'01'}`,
     tracestate:tracestate.filter(span=> config.vendor !== span.key)
     .reduce((arr, {key,value}) => {
         arr.push(`${key}=${value}`);
         return arr;
       },[`${config.vendor}=${span64}`]).slice(0,32).join()
-  }
+  },customHeader)
 } // END traceContext
 
 function parceTracestate(tracestate){
@@ -363,4 +363,34 @@ if(fs.existsSync(__dirname+'/../../package.json')){
   if(packageJson.scribbles){
     scribbles.config(packageJson.scribbles)
   }
+}
+
+//=====================================================
+//================================================ Util
+//=====================================================
+
+function deepMerge(target, source) {
+if(typeof target === 'object' && undefined === source) return target;
+if(typeof target !== 'object' || typeof source !== 'object') return false; // target or source or both ain't objects, merging doesn't make sense
+for(var prop in source) {
+  if(!source.hasOwnProperty(prop)) continue; // take into consideration only object's own properties.
+  if(prop in target) { // handling merging of two properties with equal names
+    if(typeof target[prop] !== 'object') {
+      target[prop] = source[prop];
+    } else {
+      if(typeof source[prop] !== 'object') {
+        target[prop] = source[prop];
+      } else {
+        if(target[prop].concat && source[prop].concat) { // two arrays get concatenated
+          target[prop] = target[prop].concat(source[prop]);
+        } else { // two objects get merged recursively
+          target[prop] = deepMerge(target[prop], source[prop]);
+        }
+}
+    }
+  } else { // new properties get added to target
+    target[prop] = source[prop];
+  }
+}
+return target;
 }
