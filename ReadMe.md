@@ -96,6 +96,8 @@ There is a `config` that takes a configuration object.
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
+* **forward** [array]
+  * array of header names to forward
 
 ### Example:
 
@@ -153,6 +155,8 @@ scribbles.trace([label/opt,]next_fu)
 ```
 
 The first argument to can be an options object. Here you can specify a `spanLabel` to tag your entries, a`traceId` & the `tracestate` that are using in distributed tracing.
+
+ * vendor
 
 ### Tracing a path within your service
 
