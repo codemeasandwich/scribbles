@@ -20,7 +20,7 @@ Scribbles has some nice features.
 
 ## How to install
 
-You should be running **node > v8.2.1**
+You should be running **node v8.3.0+**
 
 ```
 npm install --save scribbles
@@ -98,6 +98,8 @@ There is a `config` that takes a configuration object.
   * These log levels will also be available as functions on scribbles
 * **forward** [string/array] - **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
   * array of header names to forward.
+* **forwardHeaders** [boolean] - *defaults: `false`*
+  * scribbles will attempt to intercept all outgoing requests and inject the headers automatically.
 
 ### Example:
 

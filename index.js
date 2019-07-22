@@ -5,9 +5,8 @@
   var fe = +v[1];
   var bug = +v[2];
   if(8 > ver
-  || 8 === ver && 2 > fe
-  || 8 === ver && 2 === fe && 1 > bug ){
-    throw new Error("Scribbles needs node v8.2.1 or higher. You are running "+process.version)
+  || 8 === ver && 3 > fe){
+    throw new Error("Scribbles needs node v8.3.0 or higher. You are running "+process.version)
   }
 })()
 
@@ -405,4 +404,35 @@ for(var prop in source) {
   }
 }
 return target;
+}
+
+//=====================================================
+//====================================== forwardHeaders
+//=====================================================
+const http = require('http')
+const reqHttp = http.request.bind(http)
+
+http.request = function(url, options, callback){
+
+  if( ! config.forwardHeaders){
+    return reqHttp(url, options, callback)
+}
+
+  if('function' === typeof options){
+    callback = options
+    options = {}
+  }
+
+  if('object' === typeof url){
+    options = url;
+    url = null;
+  }
+
+  options.headers = scribbles.trace.headers(options.headers || {})
+
+  if(url){
+    return reqHttp(url, options, callback)
+  } else {
+    return reqHttp(options, callback)
+  }
 }
