@@ -229,7 +229,7 @@ scribbles.trace = function trace(opts, next){
   const traceVals = {};
 
   if('object' === typeof opts){
-    traceVals.forward = opts.forward;
+    traceVals.headers = opts.headers;
     spanLabel  = opts.spanLabel
 
     if(opts.traceId){
@@ -286,12 +286,12 @@ scribbles.middleware = {
   // pull the traceparent from the header
   express:function correlateMiddleware({headers}, res, next){
 
-    let forward = {}
-    if(config.forward){
-      if('string' === typeof config.forward && headers[config.forward]){
-        forward[config.forward] = headers[config.forward]
-      } else if(Array.isArray(config.forward) && 0 < config.forward.length){
-          forward = config.forward.reduce((all,key)=> headers[key] ? Object.assign(all,{[key] : headers[key]})
+    let headers = {}
+    if(config.headers){
+      if('string' === typeof config.headers && headers[config.headers]){
+        headers[config.headers] = headers[config.headers]
+      } else if(Array.isArray(config.headers) && 0 < config.headers.length){
+          headers = config.headers.reduce((all,key)=> headers[key] ? Object.assign(all,{[key] : headers[key]})
                                                                    : all,{})
       }
     }
@@ -300,7 +300,7 @@ scribbles.middleware = {
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],
       tracestate:headers.tracestate,
-      forward,
+      headers,
       // lets tag the current trace/span with the caller's IP
       spanLabel:headers['x-forwarded-for']
     },(spanId) => next())
@@ -315,7 +315,7 @@ scribbles.trace.headers = function traceContext(customHeader){
 
   const correlaterValue = myNamespace()
 
-  const { traceId, spanId, span64, tracestate, version,flag, forward } = correlaterValue('traceVals') || {};
+  const { traceId, spanId, span64, tracestate, version,flag, headers } = correlaterValue('traceVals') || {};
 
   return deepMerge(Object.assign({
     traceparent:`${version||'00'}-${traceId}-${spanId}-${flag||'01'}`,
@@ -324,7 +324,7 @@ scribbles.trace.headers = function traceContext(customHeader){
         arr.push(`${key}=${value}`);
         return arr;
       },[`${config.vendor}=${span64}`]).slice(0,32).join()
-  },forward || {}),customHeader)
+  },headers || {}),customHeader)
 } // END traceContext
 
 function parceTracestate(tracestate){
