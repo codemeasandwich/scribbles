@@ -10,6 +10,7 @@
   }
 })()
 
+var hook = require('node-hook');
 const format = require("string-template");
 const path = require('path');
 const moment = require('moment')
@@ -19,6 +20,31 @@ const fs = require("fs");
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
+hook.hook('.js', function (source, filename) {
+
+const path = filename.startsWith("/"+appDir) ? filename.substr(appDir.length+2) : "/"+filename
+
+return source.split("\n").map((line,index)=>{
+
+  	if(0 <= line.indexOf("scribbles.")){
+      for (let level of config.levels) {
+
+        //TODO: use the list on `resirvedFnNames`
+        // if scribbles.***( is NOT a resirvedFnNames
+        // then take thats its a LOG & replace with **.at(...)
+
+        if(0 <= line.indexOf("scribbles."+level+"(")) {
+          return line.replace("scribbles."+level+"(",
+                              `scribbles.${level}.at({file:"${path}",line:${index+1}},`)
+        } // END if
+      }// END for
+    } // END if
+    return line
+
+  }).join("\n")
+
+});
+
 const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
 const gitValues = {
@@ -82,7 +108,7 @@ function myNamespace(){
 } // END myNamespace
 
 
-function scribble(level, err, vals, message){
+function scribble(from, level, err, vals, message){
 
     let correlaterValue = myNamespace()
 
@@ -103,7 +129,7 @@ function scribble(level, err, vals, message){
                                       .map((line) => line.trim().indexOf("at") === 0 ? line.split(/at(.+)/)[1].trim() : line.trim() )
                            : undefined
 
-    const from = getSource(new Error().stack)
+    from = from || getSource(new Error().stack)
 
     const body = {
       git:{
@@ -338,6 +364,14 @@ function parceTracestate(tracestate){
 
 scribbles.config = function scribblesConfig(opts){
 
+  if(opts.levels){
+    opts.levels.forEach((logLevel) => {
+      if(-1 < resirvedFnNames.indexOf(logLevel)){
+        throw new Error('You cant use "'+logLevel+'" as a log level!')
+      }
+    }) // END forEach
+  } // END if
+
 //+++++++++++++++++++++++++++++++++++++++ Clean config
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -357,15 +391,21 @@ scribbles.config = function scribblesConfig(opts){
 
   config.levels.forEach((logLevel,index) => {
     if(index <= config.logRange){
-      scribbles[logLevel] = scribble.bind(null,logLevel)
+      scribbles[logLevel] = scribble.bind(null,null,logLevel)
+      scribbles[logLevel].at = function(from,err, vals, message){
+        return scribble(from,logLevel,err, vals, message)
+      }
     } else {
       // Log levels below the seletecd level will be suppressed.
       // This will allow you to have verbose logging calls to out your code without the performance impact
       scribbles[logLevel] = ()=>{ }
+      scribbles[logLevel].at = ()=>{ }
     }
   }) // END config.levels.forEach
 
 } // END scribblesConfig
+
+const resirvedFnNames = Object.keys(scribbles)
 
 scribbles.config()
 

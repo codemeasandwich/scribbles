@@ -96,10 +96,11 @@ There is a `config` that takes a configuration object.
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
-* **forward** [string/array] - **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
+* **headers** [string/array] - **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
   * array of header names to forward.
 * **forwardHeaders** [boolean] - *defaults: `false`*
-  * scribbles will attempt to intercept all outgoing requests and inject the headers automatically.
+  * scribbles will attempt to intercept all outgoing requests and inject the headers **automatically**. :sunglasses:
+  * out of the box support for [axios](https://www.npmjs.com/package/axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
 
 ### Example:
 
