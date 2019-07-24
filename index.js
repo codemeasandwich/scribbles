@@ -20,15 +20,18 @@ const fs = require("fs");
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
+var status = require('./src/status');
 hook.hook('.js', function (source, filename) {
 
 const path = filename.startsWith("/"+appDir) ? filename.substr(appDir.length+2) : "/"+filename
 
+const levels2check = [...config.levels,"status"];
 return source.split("\n").map((line,index)=>{
 
   	if(0 <= line.indexOf("scribbles.")){
       for (let level of config.levels) {
 
+      for (let level of levels2check) {
         //TODO: use the list on `resirvedFnNames`
         // if scribbles.***( is NOT a resirvedFnNames
         // then take thats its a LOG & replace with **.at(...)
@@ -59,6 +62,13 @@ let appDir = path.dirname(require.main.filename);
     appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 let traceCount = 0, lastActiveSpan;
 const hostname = os.hostname(), defaultPpid = 0;
+const pValues = {
+        pTitle :  process.title,
+        pid:      process.pid,
+        ppid:     process.ppid || defaultPpid,
+        user :    process.env.USER,
+        vNode:    process.version
+      };
 const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
                              + (process.ppid||defaultPpid).toString(16).slice(-2)
                              + process. pid.toString(16).slice(-2)
@@ -110,6 +120,21 @@ function myNamespace(){
 
 function scribble(from, level, err, vals, message){
 
+    if("statusX" === level){
+      const now = new Date();
+      status().then( statusinfo => {
+        Object.assign(statusinfo.process,pValues)
+        scribble(from, "status", err, { statusinfo,vals, now}, message)
+      })
+      return
+    }
+    let statusinfo, now;
+    if("status" === level){
+      statusinfo = vals.statusinfo;
+      now = vals.now
+      vals = vals.vals;
+    }
+
     let correlaterValue = myNamespace()
 
     const { traceId, spanId, span64, tracestate, spanLabel } = correlaterValue('traceVals') || {};
@@ -145,7 +170,7 @@ function scribble(from, level, err, vals, message){
         tracestate
       },
       info:{
-        time: new Date(),
+        time: now || new Date(),
         mode:config.mode,
         hostname,
         logLevel:level
@@ -156,21 +181,12 @@ function scribble(from, level, err, vals, message){
         exeType: from.type
       },
       input:{
-        message:         isErr && message ? message     : err.message || err,
+        message:         isErr && message ? message     : err && err.message ? err.message : err,
         originalMessage: isErr && message ? err.message : undefined,
         value:vals,
                             // remove the message line from trace
                             // as its in the "originalMessage" field
         stackTrace
-      },
-      process:{
-        pTitle :  process.title,
-        pid:      process.pid,
-        ppid:     process.ppid || defaultPpid,
-        user :    process.env.USER,
-        vNode:    process.version,
-        arch:     process.arch,
-        platform: process.platform
       },
       toString : function(){
 
@@ -186,6 +202,10 @@ function scribble(from, level, err, vals, message){
         return format(config.format,Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
       }
     } // END body
+
+    if(statusinfo){
+      body.status = statusinfo
+    }
 
     if(config.stdOut){
       let stdOut;
@@ -239,7 +259,7 @@ module.exports = scribbles;
 
 let config = {
   mode: process.env.NODE_ENV || 'dev',
-  logLevel:process.env.LOG_LEVEL || "log",
+  logLevel:process.env.LOG_LEVEL || "debug",
   levels:["error", "warn", "log", "info", "debug"],
   stdOut: console,
   dataOut : undefined,
@@ -312,12 +332,12 @@ scribbles.middleware = {
   // pull the traceparent from the header
   express:function correlateMiddleware({headers}, res, next){
 
-    let headers = {}
+    let headersOut = {}
     if(config.headers){
       if('string' === typeof config.headers && headers[config.headers]){
-        headers[config.headers] = headers[config.headers]
+        headersOut[config.headers] = headers[config.headers]
       } else if(Array.isArray(config.headers) && 0 < config.headers.length){
-          headers = config.headers.reduce((all,key)=> headers[key] ? Object.assign(all,{[key] : headers[key]})
+          headersOut = config.headers.reduce((all,key)=> headers[key] ? Object.assign(all,{[key] : headers[key]})
                                                                    : all,{})
       }
     }
@@ -326,7 +346,7 @@ scribbles.middleware = {
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],
       tracestate:headers.tracestate,
-      headers,
+      headers:headersOut,
       // lets tag the current trace/span with the caller's IP
       spanLabel:headers['x-forwarded-for']
     },(spanId) => next())
@@ -364,7 +384,7 @@ function parceTracestate(tracestate){
 
 scribbles.config = function scribblesConfig(opts){
 
-  if(opts.levels){
+  if(opts && opts.levels){
     opts.levels.forEach((logLevel) => {
       if(-1 < resirvedFnNames.indexOf(logLevel)){
         throw new Error('You cant use "'+logLevel+'" as a log level!')
@@ -403,6 +423,10 @@ scribbles.config = function scribblesConfig(opts){
     }
   }) // END config.levels.forEach
 
+  scribbles.status = scribble.bind(null,null,"statusX")
+  scribbles.status.at = function(from,err, vals, message){
+    return scribble(from,"statusX",err, vals, message)
+  }
 } // END scribblesConfig
 
 const resirvedFnNames = Object.keys(scribbles)

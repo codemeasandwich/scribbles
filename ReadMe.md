@@ -80,27 +80,21 @@ There is a `config` that takes a configuration object.
     * `message`: Message to log
     * `value`: Values to log
     * `stackTrace`: The stack trace if an Error object was passed
-  * [process](https://nodejs.org/api/process.html):
-    * `pTitle`: the current process title (i.e. returns the current value of ps)
-    * `pid`: the PID of the process
-    * `ppid`:  the PID of the current parent process.
-    * `user`: node the name of the user who started node,
-    * `vNode`: version of node,
-    * `arch`: platform architecture. e.g "x64"
-    * `platform`: the operating system platform
 * **time** [string] - *defaults: "YYYY-MM-DDTHH:mm:ss.SSS"*
   * [Time formatting is provided by Moment.js](https://momentjs.com/docs/#/displaying/format/)
-* **logLevel** [string] - *defaults: "log"*
+* **logLevel** [string] - *defaults: "debug"*
   * Report on this level and higher
   * Can use LOG_LEVEL from environment variables
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
 * **headers** [string/array] - **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
-  * array of header names to forward.
+  * array of header names to forward
 * **forwardHeaders** [boolean] - *defaults: `false`*
-  * scribbles will attempt to intercept all outgoing requests and inject the headers **automatically**. :sunglasses:
+  * scribbles will attempt to intercept all outgoing requests and inject the headers **automatically** :sunglasses:
   * out of the box support for [axios](https://www.npmjs.com/package/axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
+
+---
 
 ### Example:
 
@@ -142,6 +136,98 @@ scribbles.danger("hello world")
 
 // 2022-06-27T16:24:06.473 [test-runner#3d608bf] <danger> hello world
 ```
+
+## dataOut
+
+There is also a option in config to set the `dataOut` that will receive an object representing the log entry.
+
+```js
+scribbles.config({
+   dataOut:function(data){
+     console.log(data);
+   }
+})
+
+scribbles.log("hello world")
+
+/*{
+   git:{
+      repo:"myRepo",
+      branch:"master",
+      gitHash:"3d608bf"
+   },
+   trace:{
+      ...
+   }
+   info:{
+      time:2022-06-27T16:24:06.473Z,
+      mode:"local",
+      hostname:"box",
+      logLevel:"log"
+   },
+   context:{
+      fileName:"index.js",
+      lineNumber:174
+   },
+   input:{
+    message: "hello world"
+   },
+}*/
+```
+
+---
+
+# performance monitoring
+
+:rocket: You can also poll the performance of your service. By calling `scribbles.status(`
+
+This will attach an additional attribute to the **dataOut**.
+
+* status:
+  * `state`: the state of the services
+  * `cpu`: CPU info
+    * `cores`: number of available cores
+    * `model`: description of the processor
+    * `speed`: MHz frequency speed
+    * `percUsed`: load on process as percentage
+    * `percFree`: available on process as percentage
+  * `sys`: System info
+    * `startedAt`: when it's system was started
+    * `arch`: platform architecture. e.g "x64"
+    * `platform`: the operating system platform
+    * `totalMem`: the total megabytes of memory being used
+    * `freeMem`: the total megabytes of memory free
+    * `usedMem`: the total megabytes of memory being used
+  * [process](https://nodejs.org/api/process.html):
+    * `percUsedCpu`: the percentage of processing power being used by this process currently
+    * `percFreeMem`: the percentage of memory being used by this process currently
+    * `usedMem`: the total megabytes of memory being used by this process currently
+    * `startedAt`: when it's process was started
+    * `pTitle`: the current process title (i.e. returns the current value of ps)
+    * `pid`: the PID of the process
+    * `ppid`:  the PID of the current parent process
+    * `user`: node the name of the user who started node
+    * `vNode`: version of node
+  * `network`: System info
+    * `port`: listening on this Port
+    * `connections`: number of current established connections
+
+
+### Example:
+
+```js
+scribbles.config({
+   dataOut:console.log
+})
+
+setInterval(function(){
+  scribbles.status();
+}, 5000);
+```
+
+This will give you a performance snapshot every 5 seconds.
+
+---
 
 ## How to trace logs
 
