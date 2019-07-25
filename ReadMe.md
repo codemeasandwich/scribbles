@@ -4,23 +4,25 @@
 
 [![npm version](https://badge.fury.io/js/scribbles.svg)](https://www.npmjs.com/package/scribbles) [![Buy me a coffee](https://img.shields.io/badge/buy%20me-a%20coffee-orange.svg)](https://www.buymeacoffee.com/codemeasandwich)
 
-### If you like it, [★ it on github](https://github.com/codemeasandwich/scribbles) and share  :beers:
+### If you like it, [★ it on github](https://github.com/codemeasandwich/scribbles) and share :beers:
 
-## Scribbles has some nice features.
+---
 
-* [Customised output](#how-to-customise-log-output) :zap:
-* [Tracing logs](#how-to-trace-logs) :feet:
+#### Scribbles has some nice features.
+
+* [Customised output](#how-to-customise-log-output)
+* [Tracing logs](#how-to-trace-logs)
   * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
   * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
   * Can **automatically** inject IDs into outgoing headers
-* More insight in your logs :godmode:
+* More insight in your logs
   * Git repository name
   * Current branch
   * Last commit hash
   * Environment: local / dev / prod
-* Static code analysis to log file & line numbers :metal:
+* Static code analysis to log file & line numbers
   * Resolve the calling location **without** the expensive of a stacktrace
-* [Generate performance reports](#performance-monitoring) :rocket:
+* [Generate performance reports](#performance-monitoring)
   * Detailed metrics on service and host
   * Flag when the eventloop is blocking. This can happen when your app is over-loaded.
 
@@ -39,14 +41,14 @@ yarn add scribbles
 
 ## How to use
 
-:exclamation: For the best performance **scribbles** should be included as the **first module** in your project. :exclamation:
+:exclamation: For the best performance **scribbles** should be included as the **first module** in your project :exclamation:
 
 ```js
 const scribbles = require('scribbles');
 
 scribbles.log("hello world")
 
-// myRepo:local:master [ ] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 (Object.<anonymous>) hello world
+// myRepo:local:master [ ] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 hello world
 ```
 
 ## Logging signature
@@ -188,7 +190,7 @@ scribbles.log("hello world")
 
 # performance monitoring
 
-:rocket: You can also poll the performance of your service. By calling `scribbles.status(`
+:rocket: You can also poll the performance of your service. By calling `scribbles.status(...)`
 
 This will attach an additional attribute to the **dataOut**.
 
@@ -234,7 +236,7 @@ setInterval(function(){
 }, 5000);
 ```
 
-This will give you a performance snapshot every 5 seconds.
+*This will give you a performance snapshot every 5 seconds.*
 
 ---
 
@@ -253,8 +255,6 @@ scribbles.trace([label/opt,]next_fu)
 ```
 
 The first argument to can be an options object. Here you can specify a `spanLabel` to tag your entries, a`traceId` & the `tracestate` that are using in distributed tracing.
-
- * vendor
 
 ### Tracing a path within your service
 
