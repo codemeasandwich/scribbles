@@ -1,5 +1,3 @@
-
-
 # Scribbles
 
 **scribbles** is a log and tracing lib for NodeJs
@@ -8,15 +6,24 @@
 
 ### If you like it, [★ it on github](https://github.com/codemeasandwich/scribbles) and share  :beers:
 
-Scribbles has some nice features.
+## Scribbles has some nice features.
 
-* [customised output](#how-to-customise-log-output)
-* [tracing logs](#how-to-trace-logs) following the [w3c standard](https://www.w3.org/TR/trace-context/)
-* more insight
-  * git repository name
-  * current branch
-  * last commit hash
-  * environment: local / dev / prod
+* [Customised output](#how-to-customise-log-output) :zap:
+* [Tracing logs](#how-to-trace-logs) :feet:
+  * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
+  * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
+  * Can **automatically** inject IDs into outgoing headers
+* More insight in your logs :godmode:
+  * Git repository name
+  * Current branch
+  * Last commit hash
+  * Environment: local / dev / prod
+* Static code analysis to log file & line numbers :metal:
+  * Resolve the calling location **without** the expensive of a stacktrace
+* [Generate performance reports](#performance-monitoring) :rocket:
+  * Detailed metrics on service and host
+  * Flag when the eventloop is blocking. This can happen when your app is over-loaded.
+
 
 ## How to install
 
@@ -31,6 +38,8 @@ yarn add scribbles
 ```
 
 ## How to use
+
+:exclamation: For the best performance **scribbles** should be included as the **first module** in your project. :exclamation:
 
 ```js
 const scribbles = require('scribbles');
@@ -56,7 +65,7 @@ There is a `config` that takes a configuration object.
   * A callback to receive an object representing the log entry
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
-* **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}"*
+* **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*
   * git:
     * `repo`: The git repository name as it appears on the origin
     * `branch`: The current git branch
@@ -184,7 +193,7 @@ scribbles.log("hello world")
 This will attach an additional attribute to the **dataOut**.
 
 * status:
-  * `state`: the state of the services
+  * `state`: the state of the services. e.g. *"up"*, *"blocking"*
   * `cpu`: CPU info
     * `cores`: number of available cores
     * `model`: description of the processor
@@ -199,16 +208,16 @@ This will attach an additional attribute to the **dataOut**.
     * `freeMem`: the total megabytes of memory free
     * `usedMem`: the total megabytes of memory being used
   * [process](https://nodejs.org/api/process.html):
-    * `percUsedCpu`: the percentage of processing power being used by this process currently
-    * `percFreeMem`: the percentage of memory being used by this process currently
-    * `usedMem`: the total megabytes of memory being used by this process currently
+    * `percUsedCpu`: the percentage of processing power being used by this process
+    * `percFreeMem`: the percentage of memory being used by this process
+    * `usedMem`: the total megabytes of memory being used by this process
     * `startedAt`: when it's process was started
     * `pTitle`: the current process title (i.e. returns the current value of ps)
-    * `pid`: the PID of the process
-    * `ppid`:  the PID of the current parent process
+    * `pid`: the ID of the process
+    * `ppid`: the ID of the current parent process
     * `user`: node the name of the user who started node
     * `vNode`: version of node
-  * `network`: System info
+  * `network`: Networking info
     * `port`: listening on this Port
     * `connections`: number of current established connections
 
@@ -344,3 +353,9 @@ Todo:
 * Support console.group
 * Allow custom json parser for `input values`
 * a proxy that sits at the edge of your infrastructure swapping header tracestate with a lookup hash.
+
+---
+
+**small print:**
+
+**MIT** - If you use this module(or part), credit it in the readme of your project and failing to do so constitutes an irritating social faux pas. Besides this, do what you want with this code but don't blame me if it does not work.  If you find any problems with this module, [open issue on Github](https://github.com/codemeasandwich/scribbles/issues). However reading the Source Code is suggested for experience JavaScript and node engineer's and may be unsuitable for overly sensitive persons with low self-esteem or no sense of humour. Unless the word tnetennba has been used in it's correct context somewhere other than in this warning, it does not have any legal or grammatical use and may be ignored. No animals were harmed in the making of this module, although the yorkshire terrier next door is living on borrowed time let me tell you. Those of you with an overwhelming fear of the unknown will be gratified to learn that there is no hidden message revealed by reading this warning backwards, I think.

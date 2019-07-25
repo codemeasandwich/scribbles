@@ -11,6 +11,7 @@
 })()
 
 var hook = require('node-hook');
+
 const format = require("string-template");
 const path = require('path');
 const moment = require('moment')
@@ -20,18 +21,22 @@ const fs = require("fs");
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 var exec = require('child_process').execSync
+
 var status = require('./src/status');
+
+
 hook.hook('.js', function (source, filename) {
 
 const path = filename.startsWith("/"+appDir) ? filename.substr(appDir.length+2) : "/"+filename
 
 const levels2check = [...config.levels,"status"];
+
 return source.split("\n").map((line,index)=>{
 
   	if(0 <= line.indexOf("scribbles.")){
-      for (let level of config.levels) {
 
       for (let level of levels2check) {
+
         //TODO: use the list on `resirvedFnNames`
         // if scribbles.***( is NOT a resirvedFnNames
         // then take thats its a LOG & replace with **.at(...)
@@ -47,6 +52,7 @@ return source.split("\n").map((line,index)=>{
   }).join("\n")
 
 });
+
 
 const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
@@ -221,10 +227,10 @@ function scribble(from, level, err, vals, message){
       stdOut(body.toString())
     } // END if config.stdOut
     //const dataBody = Object.assign({},body,{time : moment(body.time).format(config.time)})
-    config.dataOut && config.dataOut(body)//(dataBody)
+    config.dataOut && config.dataOut(body);//(dataBody)
+
     return body;
   }// END scribble
-
 
 //=====================================================
 //=============================================== Utils
@@ -265,7 +271,7 @@ let config = {
   dataOut : undefined,
   vendor:defaultVendor,
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} ({exeType}) {message} {value} {stackTrace}`
+  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`
 }
 
 traceCount = 1;
@@ -427,6 +433,7 @@ scribbles.config = function scribblesConfig(opts){
   scribbles.status.at = function(from,err, vals, message){
     return scribble(from,"statusX",err, vals, message)
   }
+
 } // END scribblesConfig
 
 const resirvedFnNames = Object.keys(scribbles)
@@ -480,7 +487,7 @@ http.request = function(url, options, callback){
 
   if( ! config.forwardHeaders){
     return reqHttp(url, options, callback)
-}
+  }
 
   if('function' === typeof options){
     callback = options

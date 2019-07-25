@@ -1,42 +1,51 @@
-const os = require('os')
-const exec = require('child_process').exec
-const fixedStatus = {}
+const os = require('os');
+const exec = require('child_process').exec;
+const fixedStatus = {};
+let lastBlockedAt = null;
 
 function status(){
 
   return Promise.all([
-    // getCPUUsage take 1 sec to run. So kick it of first
+    // getCPUUsage take 500ms to run. So kick it off first
     getCPUUsage(),
 
         Promise.all([
-      cliInfo("lsof -i -P -n | grep LISTEN | grep " + process.pid, text => {
-        if(!text){
-          return { command:"", pid:"", user:"", fd:"", type:"", device:"", size_off:"", node:"",name:"", port:null }
-        }
-        const [command, pid, user, fd, type, device, size_off, node,name] =
-        text.split("\n").filter(line => line.slice("node".length).trim().startsWith(process.pid))[0].split(" ").filter(item => item);
-        const port = +name.split(":").pop()
-        return { command, pid, user, fd, type, device, size_off, node,name, port }
-      }),
+          // check if port was set
+          fixedStatus.port ?
+          // return existing port
+          { port:fixedStatus.port } :
+          // ELSE  find connected port
+          cliInfo("lsof -i -P -n | grep LISTEN | grep " + process.pid, text => {
+            if(!text){
+              // if the serivce is NOT connected to a port
+              return { port:null }
+            }
+            const [command, pid, user, fd, type, device, size_off, node,name] =
+            text.split("\n").filter(line => line.slice("node".length).trim().startsWith(process.pid))[0].split(" ").filter(item => item);
+            const port = +name.split(":").pop()
+            return { command, pid, user, fd, type, device, size_off, node,name, port }
+          }) // END lsof -i -P -n | grep LISTEN | grep
+        ]) // END Promise.all - inner
+      .then(([lsof]) => Promise.all([
+
       cliInfo("ps -v | grep " + process.pid, text => {
         const [pid, stat, time, sl,re, pagein, vsz, rss, lim, tsiz, cpu, mem, command, args] =
         text.split("\n").filter(line => line.trim().startsWith(process.pid))[0].split(" ").filter(item => item);
         return { pid, stat, time, sl,re, pagein, vsz, rss, lim, tsiz, cpu:+cpu, mem:+mem, command, args }
-      })])
-      .then(([lsof,ps]) => Promise.all([
-          // Proto Recv-Q Send-Q  Local Address          Foreign Address        (state)
-          lsof.port ? cliInfo('netstat -an | grep "'+lsof.port+' " | wc -l', text => {
-            let connections = +text;
-            connections--; // remove the "LISTEN" entry
-            connections = Math.ceil(connections / 2) // each connection is reported twice.
-            // incoming port -> outgoing port AND outgoing port -> incoming Port
-            return ({connections})
-          }) : {connections:0},
-          lsof,ps
-        ]))
+      }), // END ps -v | grep
 
-      ])
-      .then(([cupUsage,[net,lsof,ps]])=>{
+      lsof,
+      // "netstat -an" = Proto, Recv-Q, Send-Q, Local Address, Foreign Address, (state)
+      lsof.port ? cliInfo('netstat -an | grep "'+lsof.port+' " | wc -l', text => {
+        let connections = +text;
+        connections--; // remove the "LISTEN" entry
+        connections = Math.ceil(connections / 2) // each connection is reported twice.
+        // incoming port -> outgoing port AND outgoing port -> incoming Port
+        return ({connections})
+      }) : {connections:0} // END netstat -an | grep
+    ])) // END then - inner
+  ]) // END Promise.all -outter
+      .then(([cupUsage,[ps,lsof,net]])=>{
 
         const app_startedAt = fixedStatus.app_startedAt
                             = fixedStatus.app_startedAt
@@ -46,14 +55,19 @@ function status(){
                             = fixedStatus.sys_startedAt
                             || new Date(Date.now()-Math.round(os.uptime()*1000))
 
+        const port = fixedStatus.port
+                   = fixedStatus.port || lsof.port
+
         const cpu = fixedStatus.cpu
-                  = fixedStatus.cpu || Object.assign({cores:os.cpus().length},os.cpus()[0],{times:undefined})
+                  = fixedStatus.cpu || Object.assign({cores:os.cpus().length},os.cpus()[0])
+
+        delete cpu.times;
 
         const totalMem = fixedStatus.totalMem
                        = fixedStatus.totalMem || Math.round(os.totalmem()/1024/1024)//+"M"
 
         return {
-            stage: 'up',
+            state: lastBlockedAt ? 'blocking' : 'up',
             process: {
               percUsedCpu:+ps.cpu.toFixed(2),
               percFreeMem:+ps.mem.toFixed(2),
@@ -61,7 +75,7 @@ function status(){
               startedAt:app_startedAt,
             },
             network:{
-              port:lsof.port,
+              port,
               connections: net.connections
             },
             sys: {
@@ -75,7 +89,9 @@ function status(){
             cpu: Object.assign({},cpu,{
               percUsed: +(cupUsage.percUsed*100).toFixed(2),
               percFree: +(cupUsage.percFree*100).toFixed(2)})
-          }
+          } // END return
+      }).catch(err => {
+        throw err
       })
 } // END status
 
@@ -88,47 +104,61 @@ function cliInfo(command,trans){
         resolve(trans ? trans(stdout) : stdout)
       })
     });
-}
+} // END cliInfo
 
 function getCPUUsage(){
 	return new Promise(function(resolve, reject) {
 
-      var stats1 = getCPUInfo();
-      var startIdle = stats1.idle;
+      var stats1     = getCPUInfo();
+      var startIdle  = stats1.idle;
       var startTotal = stats1.total;
 
       setTimeout(function() {
-          var stats2 = getCPUInfo();
-          var endIdle = stats2.idle;
+          var stats2   = getCPUInfo();
+          var endIdle  = stats2.idle;
           var endTotal = stats2.total;
 
           var idle 	= endIdle - startIdle;
-          var total 	= endTotal - startTotal;
+          var total = endTotal - startTotal;
           var perc	= idle / total;
 
           resolve( { percFree: perc, percUsed:(1 - perc) });
-
-      }, 1000 );
-
-  })
-}
+      }, 500 );
+  }) // END new Promise
+} // END getCPUUsage
 
 function getCPUInfo(){
     const cpus = os.cpus();
-
     let user = 0,nice = 0,sys = 0,idle = 0,irq = 0;
 
     for(const cpu in cpus){
         if (!cpus.hasOwnProperty(cpu)) continue;
         user += cpus[cpu].times.user;
         nice += cpus[cpu].times.nice;
-        sys += cpus[cpu].times.sys;
-        irq += cpus[cpu].times.irq;
+        sys  += cpus[cpu].times.sys;
+        irq  += cpus[cpu].times.irq;
         idle += cpus[cpu].times.idle;
-    }
+    } // END for
 
-    return {
-        idle,
-        total: user + nice + sys + idle + irq
-    };
-}
+    return { idle, total: user + nice + sys + idle + irq };
+} // END getCPUInfo
+
+setTimeout(function () {
+    let start = process.hrtime();
+    const interval = 100, threshold = 15;
+    setInterval(function () {
+        const delta = process.hrtime(start);
+        const nanosec = delta[0] * 1e9 + delta[1];
+        const ms = nanosec / 1e6;
+        const n = ms - interval;
+
+        if (n > threshold) {
+            lastBlockedAt = Date.now();
+        } else if( lastBlockedAt
+               &&  2000 < (Date.now() - lastBlockedAt) ){
+          // reset if the eventloop has been UN-blocked for 2sec+
+          lastBlockedAt = null
+        }
+        start = process.hrtime();
+    }, interval).unref();
+},10000) // wait 10 sec for everything to get setup & running

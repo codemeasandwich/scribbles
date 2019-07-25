@@ -1,7 +1,7 @@
 {
   "name": "scribbles",
-  "version": "0.5.0",
-  "description": "Scribbles is a node console out formatter",
+  "version": "0.6.0",
+  "description": "Scribbles is a log and tracing lib for NodeJs",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,15 +10,16 @@
     "type": "git",
     "url": "git+https://github.com/codemeasandwich/scribbles.git"
   },
-  "author": "Brian Shannon (http://www.codemeasandwich.com)",
+  "author": "Brian Shannon (https://github.com/codemeasandwich)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/codemeasandwich/scribbles/issues"
   },
   "keywords": [
+    "trace",
+    "trace context",
     "logging",
-    "nodejs",
-    "errors"
+    "nodejs"
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "dependencies": {
