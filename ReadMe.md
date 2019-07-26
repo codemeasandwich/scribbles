@@ -301,41 +301,40 @@ Instrumenting web frameworks, storage clients, application code, etc. to make tr
 
 ### Example:
 
-This uses express & the built-in http.get
-
 ```js
 const scribbles = require('scribbles');
+const axios     = require('axios');
+const express   = require('express');
 
 scribbles.config({ forwardHeaders:true });
 
-app.use(scribbles.middleware.express);
+const app = express();
 
 // start a trace for each incoming request.
+app.use(scribbles.middleware.express);
+
 app.get('/', function (req, res){
 
-  scribbles.log("doing stuff");
-  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 doing stuff
+  scribbles.log("incoming");
+  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 incoming
 
   // Just by calling this other service normally, scribbles will inject the tracing headers
-  http.get("https://some.domain.com/foo/",  (resp) => {
-
-    let data = '';
-
-    // A chunk of data has been recieved.
-    resp.on('data', (chunk) => { data += chunk; });
-
-    // The whole response has been received. Print out the result.
-    resp.on('end', () => {
-      scribbles.log("We got a reply",{statusCode:res.statusCode, data});
+  axios.get('https://some.domain.com/foo/')
+    .then(response => {
+      scribbles.log(response.data);
+      res.send("fin")
+    })
+    .catch(error => {
+      scribbles.error(error);
     });
 
-    ...
-  }) // END http.get
-
 }) // END app.get '/'
+
+
+app.listen(port, () => scribbles.status(`App is ready!`))
 ```
 
-**Example above is for [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback) but it will also work with [axios](https://www.npmjs.com/package/axios) and [request](https://www.npmjs.com/package/request)**
+**Example above is for [axios](https://www.npmjs.com/package/axios) but it will also work with [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback) and [request](https://www.npmjs.com/package/request)**
 
 ---
 
