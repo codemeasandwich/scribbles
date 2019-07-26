@@ -358,28 +358,22 @@ function traceMiddleware({headers}, res, next){
 #### if you want to handle the out going headers
 
 ```js
-const scribbles = require('scribbles');
-const traceMiddleware = scribbles.middleware.express // Or use your own
+app.get('/', function (req, res){
 
-// start a trace for each incoming request.
-app.get('/', traceMiddleware, function (req, res){
+  scribbles.log("incoming");
+  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 incoming
 
-  scribbles.log("doing stuff");
-  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 doing stuff
 
-  http.request({
-    hostname: 'localhost',
-    port: 3001,
-    path: '/',
-    method: 'POST',
-
-    // To continue the trace to the next micro-service.
-    // We just need to send on the generated headers
-    headers: scribbles.trace.headers(), // { traceparent: '...', tracestate:'...'},
-   (res) => {
-      scribbles.log(`statusCode: ${res.statusCode}`)
-    }
-  }) // END http.request
+  axios.get('https://some.domain.com/foo/',{
+      headers:scribbles.trace.headers() // tracing header IDs
+    })
+    .then(response => {
+      scribbles.log(response.data);
+      res.send("fin")
+    })
+    .catch(error => {
+      scribbles.error(error);
+    });
 
 }) // END app.get '/'
 ```
