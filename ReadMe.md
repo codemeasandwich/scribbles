@@ -14,7 +14,7 @@
 * [Tracing logs](#how-to-trace-logs)
   * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
   * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
-  * Can **automatically** inject IDs into outgoing headers
+  * Can **automatically** inject IDs into outgoing headers. Works with [axios](https://www.npmjs.com/package/axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
 * More insight in your logs
   * Git repository name
   * Current branch
@@ -68,6 +68,7 @@ There is a `config` that takes a configuration object.
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
 * **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*
+  * `instance`: a base16 value representing the current instance
   * git:
     * `repo`: The git repository name as it appears on the origin
     * `branch`: The current git branch
@@ -203,13 +204,13 @@ This will attach an additional attribute to the **dataOut**.
     * `percUsed`: load on process as percentage
     * `percFree`: available on process as percentage
   * `sys`: System info
-    * `startedAt`: when it's system was started
+    * `startedAt`: when the system was started
     * `arch`: platform architecture. e.g "x64"
     * `platform`: the operating system platform
     * `totalMem`: the total megabytes of memory being used
     * `freeMem`: the total megabytes of memory free
     * `usedMem`: the total megabytes of memory being used
-  * [process](https://nodejs.org/api/process.html):
+  * `process`: Node process info
     * `percUsedCpu`: the percentage of processing power being used by this process
     * `percFreeMem`: the percentage of memory being used by this process
     * `usedMem`: the total megabytes of memory being used by this process
@@ -298,36 +299,47 @@ Instrumenting web frameworks, storage clients, application code, etc. to make tr
 
 ---
 
-This is an express **BUT** can be used in any other framework :blush:
+### Example:
+
+This uses express & the built-in http.get
 
 ```js
 const scribbles = require('scribbles');
 
+scribbles.config({ forwardHeaders:true });
+
+app.use(scribbles.middleware.express);
+
 // start a trace for each incoming request.
-app.get('/', scribbles.middleware.express, function (req, res){
+app.get('/', function (req, res){
 
-  scribbles.log("doing stuff")
-  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 (Object.<anonymous>) doing stuff
-  // lets call anoher service
-  http.request({
-    hostname: 'localhost',
-    port: 3001,
-    path: '/',
-    method: 'POST',
+  scribbles.log("doing stuff");
+  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 doing stuff
 
-    // To continue the trace to the next micro-service.
-    // We just need to send on the generated headers
-    headers: scribbles.trace.headers(), // { traceparent: '...', tracestate:'...'},
-   (res) => {
-    scribbles.log(`statusCode: ${res.statusCode}`)
-  })
+  // Just by calling this other service normally, scribbles will inject the tracing headers
+  http.get("https://some.domain.com/foo/",  (resp) => {
 
-}
+    let data = '';
+
+    // A chunk of data has been recieved.
+    resp.on('data', (chunk) => { data += chunk; });
+
+    // The whole response has been received. Print out the result.
+    resp.on('end', () => {
+      scribbles.log("We got a reply",{statusCode:res.statusCode, data});
+    });
+
+    ...
+  }) // END http.get
+
+}) // END app.get '/'
 ```
-The `tracestate` lists each hop/service the request has flown through, regardless of who owns that service.
+
+**Example above is for [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback) but it will also work with [axios](https://www.npmjs.com/package/axios) and [request](https://www.npmjs.com/package/request)**
+
+---
 
 ### If you want to spin you own middleware
-
 
 It may look something like this
 ```js
@@ -340,8 +352,37 @@ function traceMiddleware({headers}, res, next){
 
     // lets tag the current trace/span with the caller's IP
     spanLabel:headers['x-forwarded-for']
-  },(spanId) => next())
+  },(spanId) => next());
 } // END express
+```
+
+#### if you want to handle the out going headers
+
+```js
+const scribbles = require('scribbles');
+const traceMiddleware = scribbles.middleware.express // Or use your own
+
+// start a trace for each incoming request.
+app.get('/', traceMiddleware, function (req, res){
+
+  scribbles.log("doing stuff");
+  // myRepo:local:master [198.10.120.12 090e8e40000005] 2022-06-27T16:24:06.473 #3d608bf <log> index.js:174 doing stuff
+
+  http.request({
+    hostname: 'localhost',
+    port: 3001,
+    path: '/',
+    method: 'POST',
+
+    // To continue the trace to the next micro-service.
+    // We just need to send on the generated headers
+    headers: scribbles.trace.headers(), // { traceparent: '...', tracestate:'...'},
+   (res) => {
+      scribbles.log(`statusCode: ${res.statusCode}`)
+    }
+  }) // END http.request
+
+}) // END app.get '/'
 ```
 
 ---
@@ -358,4 +399,4 @@ Todo:
 
 **small print:**
 
-**MIT** - If you use this module(or part), credit it in the readme of your project and failing to do so constitutes an irritating social faux pas. Besides this, do what you want with this code but don't blame me if it does not work.  If you find any problems with this module, [open issue on Github](https://github.com/codemeasandwich/scribbles/issues). However reading the Source Code is suggested for experience JavaScript and node engineer's and may be unsuitable for overly sensitive persons with low self-esteem or no sense of humour. Unless the word tnetennba has been used in it's correct context somewhere other than in this warning, it does not have any legal or grammatical use and may be ignored. No animals were harmed in the making of this module, although the yorkshire terrier next door is living on borrowed time let me tell you. Those of you with an overwhelming fear of the unknown will be gratified to learn that there is no hidden message revealed by reading this warning backwards, I think.
+**MIT** - If you use this module(or part), credit it in the readme of your project and failing to do so constitutes an irritating social faux pas. Besides this, do what you want with this code but don't blame me if it does not work.  If you find any problems with this module, [open issue on Github](https://github.com/codemeasandwich/scribbles/issues). However reading the Source Code is suggested for experience JavaScript and node engineer's and may be unsuitable for overly sensitive persons with low self-esteem or no sense of humour. Unless the word tnetennba has been used in it's correct context somewhere other than in this warning, it does not have any legal or grammatical use and may be ignored. No animals were harmed in the making of this module, although the yorkshire terrier next door is living on borrowed time, let me tell you. Those of you with an overwhelming fear of the unknown will be gratified to learn that there is no hidden message revealed by reading this warning backwards, I think.

@@ -1,9 +1,9 @@
 
 (function(){
-  var v = process.version.split('.');
-  var ver = +(v[0].slice(1))
-  var fe = +v[1];
-  var bug = +v[2];
+  const v = process.version.split('.');
+  const ver = +(v[0].slice(1))
+  const fe = +v[1];
+  const bug = +v[2];
   if(8 > ver
   || 8 === ver && 3 > fe){
     throw new Error("Scribbles needs node v8.3.0 or higher. You are running "+process.version)
@@ -20,9 +20,9 @@ const os = require('os');
 const fs = require("fs");
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
-var exec = require('child_process').execSync
+const exec = require('child_process').execSync
 
-var status = require('./src/status');
+const status = require('./src/status');
 
 
 hook.hook('.js', function (source, filename) {
@@ -67,18 +67,20 @@ const defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 let appDir = path.dirname(require.main.filename);
     appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 let traceCount = 0, lastActiveSpan;
-const hostname = os.hostname(), defaultPpid = 0;
+const hostname = os.hostname();
 const pValues = {
         pTitle :  process.title,
         pid:      process.pid,
-        ppid:     process.ppid || defaultPpid,
+        ppid:     process.ppid || 0,
         user :    process.env.USER,
         vNode:    process.version
       };
 const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
-                             + (process.ppid||defaultPpid).toString(16).slice(-2)
-                             + process. pid.toString(16).slice(-2)
-                             + Math.floor(Math.random() * 15).toString(16))
+                             + (process.ppid ? process.ppid.toString(16).slice(-2)
+                                             : Math.floor(Math.random()*15).toString(16) +
+                                               Math.floor(Math.random()*15).toString(16))
+                             + process.pid.toString(16).slice(-2)
+                             + Math.floor(Math.random()*15).toString(16))
 
 
 
@@ -163,6 +165,7 @@ function scribble(from, level, err, vals, message){
     from = from || getSource(new Error().stack)
 
     const body = {
+      instance:cuidPrefix,
       git:{
         repo:gitValues.repo,
         branch:gitValues.branch,
@@ -196,11 +199,11 @@ function scribble(from, level, err, vals, message){
       },
       toString : function(){
 
-        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{})
+        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{instance:cuidPrefix})
 
         const time  = moment(body.time).format(config.time);
 
-        const outputMessage    = message || err.message || err;
+        const outputMessage    = message || err && err.message || err;
         const outputValue      = "object" === typeof vals ? JSON.stringify(vals) : '';
         const outputStackTrace = isErr ? "\n"+( message ? "Error: "+err.message+"\n":"")+all.stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
@@ -436,9 +439,9 @@ scribbles.config = function scribblesConfig(opts){
 
 } // END scribblesConfig
 
-const resirvedFnNames = Object.keys(scribbles)
+const resirvedFnNames = Object.keys(scribbles);
 
-scribbles.config()
+scribbles.config();
 
 if(fs.existsSync(__dirname+'/../../package.json')){
   const packageJson = require('../../package.json');
@@ -452,29 +455,29 @@ if(fs.existsSync(__dirname+'/../../package.json')){
 //=====================================================
 
 function deepMerge(target, source) {
-if(typeof target === 'object' && undefined === source) return target;
-if(typeof target !== 'object' || typeof source !== 'object') return false; // target or source or both ain't objects, merging doesn't make sense
-for(var prop in source) {
-  if(!source.hasOwnProperty(prop)) continue; // take into consideration only object's own properties.
-  if(prop in target) { // handling merging of two properties with equal names
-    if(typeof target[prop] !== 'object') {
-      target[prop] = source[prop];
-    } else {
-      if(typeof source[prop] !== 'object') {
+  if(typeof target === 'object' && undefined === source) return target;
+  if(typeof target !== 'object' || typeof source !== 'object') return false; // target or source or both ain't objects, merging doesn't make sense
+  for(var prop in source) {
+    if(!source.hasOwnProperty(prop)) continue; // take into consideration only object's own properties.
+    if(prop in target) { // handling merging of two properties with equal names
+      if(typeof target[prop] !== 'object') {
         target[prop] = source[prop];
       } else {
-        if(target[prop].concat && source[prop].concat) { // two arrays get concatenated
-          target[prop] = target[prop].concat(source[prop]);
-        } else { // two objects get merged recursively
-          target[prop] = deepMerge(target[prop], source[prop]);
+        if(typeof source[prop] !== 'object') {
+          target[prop] = source[prop];
+        } else {
+          if(target[prop].concat && source[prop].concat) { // two arrays get concatenated
+            target[prop] = target[prop].concat(source[prop]);
+          } else { // two objects get merged recursively
+            target[prop] = deepMerge(target[prop], source[prop]);
+          }
         }
-}
+      }
+    } else { // new properties get added to target
+      target[prop] = source[prop];
     }
-  } else { // new properties get added to target
-    target[prop] = source[prop];
   }
-}
-return target;
+  return target;
 }
 
 //=====================================================
