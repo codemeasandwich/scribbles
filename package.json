@@ -1,6 +1,6 @@
 {
   "name": "scribbles",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Scribbles is a log and tracing lib for NodeJs",
   "main": "index.js",
   "scripts": {

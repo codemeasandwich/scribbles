@@ -163,6 +163,7 @@ scribbles.config({
 scribbles.log("hello world")
 
 /*{
+   instance:"bfc977a",
    git:{
       repo:"myRepo",
       branch:"master",
