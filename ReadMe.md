@@ -68,7 +68,6 @@ There is a `config` that takes a configuration object.
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
 * **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*
-  * `instance`: a base16 value representing the current instance
   * git:
     * `repo`: The git repository name as it appears on the origin
     * `branch`: The current git branch
@@ -83,6 +82,7 @@ There is a `config` that takes a configuration object.
     * `time`: Time of logging
     * `logLevel`: The logging level for this entry
     * `hostname`: The hostname of the operating system.
+    * `instance`: a base16 value representing the current instance
     * `mode`: The environment your application is running in. *e.g. local, dev, prod etc..*
   * context:
     * `fileName`: The file name

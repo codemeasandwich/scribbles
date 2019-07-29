@@ -165,7 +165,6 @@ function scribble(from, level, err, vals, message){
     from = from || getSource(new Error().stack)
 
     const body = {
-      instance:cuidPrefix,
       git:{
         repo:gitValues.repo,
         branch:gitValues.branch,
@@ -182,6 +181,7 @@ function scribble(from, level, err, vals, message){
         time: now || new Date(),
         mode:config.mode,
         hostname,
+        instance:cuidPrefix,
         logLevel:level
       },
       context:{
@@ -199,7 +199,7 @@ function scribble(from, level, err, vals, message){
       },
       toString : function(){
 
-        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{instance:cuidPrefix})
+        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{})
 
         const time  = moment(body.time).format(config.time);
 
