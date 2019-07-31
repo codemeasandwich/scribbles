@@ -13,7 +13,7 @@
 var hook = require('node-hook');
 var sVer = require('./package.json').version;
 
-const format = require("string-template");
+const compile = require("string-template/compile")
 const path = require('path');
 const moment = require('moment')
 const crypto = require('crypto')
@@ -210,7 +210,7 @@ function scribble(from, level, err, vals, message){
         const outputStackTrace = isErr ? "\n"+( message ? "Error: "+err.message+"\n":"")+all.stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
         // based on: https://www.npmjs.com/package/tracer
-        return format(config.format,Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
+        return config.__compile(Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
       }
     } // END body
 
@@ -438,6 +438,8 @@ scribbles.config = function scribblesConfig(opts){
   scribbles.status.at = function(from,err, vals, message){
     return scribble(from,"statusX",err, vals, message)
   }
+
+  config.__compile = compile(config.format)
 
 } // END scribblesConfig
 
