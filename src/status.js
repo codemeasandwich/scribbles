@@ -9,7 +9,7 @@ function status(){
     // getCPUUsage take 500ms to run. So kick it off first
     getCPUUsage(),
 
-        Promise.all([
+        Promise.resolve(
           // check if port was set
           fixedStatus.port ?
           // return existing port
@@ -25,8 +25,8 @@ function status(){
             const port = +name.split(":").pop()
             return { command, pid, user, fd, type, device, size_off, node,name, port }
           }) // END lsof -i -P -n | grep LISTEN | grep
-        ]) // END Promise.all - inner
-      .then(([lsof]) => Promise.all([
+
+      ).then((lsof) => Promise.all([
 
       cliInfo("ps -v | grep " + process.pid, text => {
         const [pid, stat, time, sl,re, pagein, vsz, rss, lim, tsiz, cpu, mem, command, args] =
