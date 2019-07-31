@@ -131,6 +131,7 @@ function scribble(from, level, err, vals, message){
 
     if("statusX" === level){
       const now = new Date();
+      from = from || getSource(new Error().stack)
       status().then( statusinfo => {
         Object.assign(statusinfo.process,pValues)
         scribble(from, "status", err, { statusinfo,vals, now}, message)
