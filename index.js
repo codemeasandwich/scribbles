@@ -1,5 +1,5 @@
 
-(function(){
+(function checkNodeVerion(){
   const v = process.version.split('.');
   const ver = +(v[0].slice(1))
   const fe = +v[1];
@@ -11,8 +11,9 @@
 })()
 
 var hook = require('node-hook');
+var sVer = require('./package.json').version;
 
-const format = require("string-template");
+const compile = require("string-template/compile")
 const path = require('path');
 const moment = require('moment')
 const crypto = require('crypto')
@@ -25,7 +26,7 @@ const exec = require('child_process').execSync
 const status = require('./src/status');
 
 
-hook.hook('.js', function (source, filename) {
+hook.hook('.js', function processFileForScribblesCalls (source, filename) {
 
 const path = filename.startsWith("/"+appDir) ? filename.substr(appDir.length+2) : "/"+filename
 
@@ -93,7 +94,7 @@ function myNamespace(){
   && process.namespaces[lastActiveSpan]
   && process.namespaces[lastActiveSpan].active){
     const trace = cls.getNamespace(lastActiveSpan)
-    correlaterValue = function(key,value){
+    correlaterValue = function correlaterValue(key,value){
       return 1 === arguments.length ? trace.get(key) : trace.set(key,value)
     }
   } else {
@@ -104,7 +105,7 @@ function myNamespace(){
       // find the active namespace
       if(!! process.namespaces[spanId].active){
         const trace = cls.getNamespace(spanId)
-        correlaterValue = function(key,value){
+        correlaterValue = function correlaterValue(key,value){
           return 1 === arguments.length ? trace.get(key) : trace.set(key,value)
         }
         lastActiveSpan = spanId;
@@ -130,6 +131,7 @@ function scribble(from, level, err, vals, message){
 
     if("statusX" === level){
       const now = new Date();
+      from = from || getSource(new Error().stack)
       status().then( statusinfo => {
         Object.assign(statusinfo.process,pValues)
         scribble(from, "status", err, { statusinfo,vals, now}, message)
@@ -165,6 +167,7 @@ function scribble(from, level, err, vals, message){
     from = from || getSource(new Error().stack)
 
     const body = {
+      v:sVer,
       git:{
         repo:gitValues.repo,
         branch:gitValues.branch,
@@ -199,7 +202,7 @@ function scribble(from, level, err, vals, message){
       },
       toString : function(){
 
-        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{})
+        const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{v:sVer})
 
         const time  = moment(body.time).format(config.time);
 
@@ -208,7 +211,7 @@ function scribble(from, level, err, vals, message){
         const outputStackTrace = isErr ? "\n"+( message ? "Error: "+err.message+"\n":"")+all.stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
         // based on: https://www.npmjs.com/package/tracer
-        return format(config.format,Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
+        return config.__compile(Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
       }
     } // END body
 
@@ -421,7 +424,7 @@ scribbles.config = function scribblesConfig(opts){
   config.levels.forEach((logLevel,index) => {
     if(index <= config.logRange){
       scribbles[logLevel] = scribble.bind(null,null,logLevel)
-      scribbles[logLevel].at = function(from,err, vals, message){
+      scribbles[logLevel].at = function at(from,err, vals, message){
         return scribble(from,logLevel,err, vals, message)
       }
     } else {
@@ -433,9 +436,11 @@ scribbles.config = function scribblesConfig(opts){
   }) // END config.levels.forEach
 
   scribbles.status = scribble.bind(null,null,"statusX")
-  scribbles.status.at = function(from,err, vals, message){
+  scribbles.status.at = function at(from,err, vals, message){
     return scribble(from,"statusX",err, vals, message)
   }
+
+  config.__compile = compile(config.format)
 
 } // END scribblesConfig
 
@@ -486,7 +491,7 @@ function deepMerge(target, source) {
 const http = require('http')
 const reqHttp = http.request.bind(http)
 
-http.request = function(url, options, callback){
+http.request = function httpRequestWrapper(url, options, callback){
 
   if( ! config.forwardHeaders){
     return reqHttp(url, options, callback)

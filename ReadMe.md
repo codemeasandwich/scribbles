@@ -92,6 +92,7 @@ There is a `config` that takes a configuration object.
     * `message`: Message to log
     * `value`: Values to log
     * `stackTrace`: The stack trace if an Error object was passed
+  * `v`: The version of scribbles used to create this entry. This allows matching log body with parsers. As the layout may change with new versions.
 * **time** [string] - *defaults: "YYYY-MM-DDTHH:mm:ss.SSS"*
   * [Time formatting is provided by Moment.js](https://momentjs.com/docs/#/displaying/format/)
 * **logLevel** [string] - *defaults: "debug"*
@@ -163,7 +164,7 @@ scribbles.config({
 scribbles.log("hello world")
 
 /*{
-   instance:"bfc977a",
+   v:"1.2.3",
    git:{
       repo:"myRepo",
       branch:"master",
@@ -176,7 +177,8 @@ scribbles.log("hello world")
       time:2022-06-27T16:24:06.473Z,
       mode:"local",
       hostname:"box",
-      logLevel:"log"
+      logLevel:"log",
+      instance:"bfc977a"
    },
    context:{
       fileName:"index.js",
@@ -194,7 +196,7 @@ scribbles.log("hello world")
 
 :rocket: You can also poll the performance of your service. By calling `scribbles.status(...)`
 
-This will attach an additional attribute to the **dataOut**.
+This will attach an additional attribute to the **dataOut** and will not be available in *stdOut*.
 
 * status:
   * `state`: the state of the services. e.g. *"up"*, *"blocking"*
