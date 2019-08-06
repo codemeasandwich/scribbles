@@ -214,6 +214,7 @@ This will attach an additional attribute to the **dataOut** and will not be avai
     * `freeMem`: the total megabytes of memory free
     * `usedMem`: the total megabytes of memory being used
   * `process`: Node process info
+    * `eventloopDelay`: the time the previous call-stack took to execute in millsec
     * `percUsedCpu`: the percentage of processing power being used by this process
     * `percFreeMem`: the percentage of memory being used by this process
     * `usedMem`: the total megabytes of memory being used by this process

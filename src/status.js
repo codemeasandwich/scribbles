@@ -1,7 +1,7 @@
 const os = require('os');
 const exec = require('child_process').exec;
 const fixedStatus = {};
-let lastBlockedAt = null;
+let lastBlockedAt = null, eventloopDelay = 0;
 
 function status(){
 
@@ -69,6 +69,7 @@ function status(){
         return {
             state: lastBlockedAt ? 'blocking' : 'up',
             process: {
+              eventloopDelay,
               percUsedCpu:+ps.cpu.toFixed(2),
               percFreeMem:+ps.mem.toFixed(2),
               usedMem: Math.round(process.memoryUsage().rss / 1024 / 1024),//+"M",
@@ -145,20 +146,25 @@ function getCPUInfo(){
 
 setTimeout(function () {
     let start = process.hrtime();
-    const interval = 100, threshold = 15;
+    const interval = 1, threshold = 15;
     setInterval(function () {
         const delta = process.hrtime(start);
         const nanosec = delta[0] * 1e9 + delta[1];
         const ms = nanosec / 1e6;
-        const n = ms - interval;
-
-        if (n > threshold) {
+        const newEventloopDelay = ~~(ms - interval);
+        // if the eventloop have TWICH taken over 100millsec to return,
+        // then its blocking!!
+        if (eventloopDelay > threshold + 100
+        && newEventloopDelay > threshold + 100) {
             lastBlockedAt = Date.now();
         } else if( lastBlockedAt
-               &&  2000 < (Date.now() - lastBlockedAt) ){
-          // reset if the eventloop has been UN-blocked for 2sec+
+               &&  500 < (Date.now() - lastBlockedAt) ){
+          // reset if the eventloop has been UN-blocked for 500millsec
           lastBlockedAt = null
         }
+        
+        eventloopDelay = newEventloopDelay;
+
         start = process.hrtime();
     }, interval).unref();
-},10000) // wait 10 sec for everything to get setup & running
+},1000) // wait a sec for everything to get setup & running
