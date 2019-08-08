@@ -1,20 +1,8 @@
+require('./src/checkNodeVer')
 
-(function checkNodeVerion(){
-  const v = process.version.split('.');
-  const ver = +(v[0].slice(1))
-  const fe = +v[1];
-  const bug = +v[2];
-  if(8 > ver
-  || 8 === ver && 3 > fe){
-    throw new Error("Scribbles needs node v8.3.0 or higher. You are running "+process.version)
-  }
-})()
-
-var hook = require('node-hook');
 var sVer = require('./package.json').version;
 
-const compile = require("string-template/compile")
-const path = require('path');
+const compile = require("string-template/compile");
 const moment = require('moment')
 const crypto = require('crypto')
 const os = require('os');
@@ -24,36 +12,11 @@ const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 const exec = require('child_process').execSync
 
 const status = require('./src/status');
-
-
-hook.hook('.js', function processFileForScribblesCalls (source, filename) {
-
-const path = filename.startsWith("/"+appDir) ? filename.substr(appDir.length+2) : "/"+filename
-
-const levels2check = [...config.levels,"status"];
-
-return source.split("\n").map((line,index)=>{
-
-  	if(0 <= line.indexOf("scribbles.")){
-
-      for (let level of levels2check) {
-
-        //TODO: use the list on `resirvedFnNames`
-        // if scribbles.***( is NOT a resirvedFnNames
-        // then take thats its a LOG & replace with **.at(...)
-
-        if(0 <= line.indexOf("scribbles."+level+"(")) {
-          return line.replace("scribbles."+level+"(",
-                              `scribbles.${level}.at({file:"${path}",line:${index+1}},`)
-        } // END if
-      }// END for
-    } // END if
-    return line
-
-  }).join("\n")
-
-});
-
+const loader = require('./src/loader');
+const hijacker = require('./src/hijacker');
+const config = require('./src/config');
+const { deepMerge, getSource } = require('./src/helpers');
+const { parceTracestate } = require('./src/utils');
 
 const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
@@ -63,10 +26,8 @@ const gitValues = {
   branch:exec('git rev-parse --abbrev-ref HEAD',{ encoding: 'utf8' }).trim()
 };
 
-const defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
+config.defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 
-let appDir = path.dirname(require.main.filename);
-    appDir = appDir[0] === '/' ? appDir.substr(1) : appDir
 let traceCount = 0, lastActiveSpan;
 const hostname = os.hostname();
 const pValues = {
@@ -125,7 +86,12 @@ function myNamespace(){
   return correlaterValue
 
 } // END myNamespace
+function scribble(from, level, ...args){
+  if(args.length)
+  if(err instanceof Error){
 
+  }
+}
 
 function scribble(from, level, err, vals, message){
 
@@ -238,47 +204,11 @@ function scribble(from, level, err, vals, message){
     return body;
   }// END scribble
 
-//=====================================================
-//=============================================== Utils
-//=====================================================
-
-//++++++++++++++++++++++++++++++++++++++++++ getSource
-//++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-function getSource(stack){
-
-    const originFile = stack.split('\n')[2].split('/');
-    const file = originFile[originFile.length - 1].split(':')[0];
-    const line = originFile[originFile.length - 1].split(':')[1];
-    let path = originFile.splice(1).join('/')
-        path = path[path.length - 1] === ')' ? path.substring(0, path.length - 1) : path;
-        path = path.startsWith(appDir) ? path.substr(appDir.length+1) : "/"+path
-    return {
-      type:originFile[0].split('at').pop().trim().split(" ")[0],
-      file,
-      line:+line,
-      path
-    } // END return
-} // END getSource
 
 const scribbles = {}
 
 module.exports = scribbles;
 
-//=====================================================
-//====================================== Default Config
-//=====================================================
-
-let config = {
-  mode: process.env.NODE_ENV || 'dev',
-  logLevel:process.env.LOG_LEVEL || "debug",
-  levels:["error", "warn", "log", "info", "debug"],
-  stdOut: console,
-  dataOut : undefined,
-  vendor:defaultVendor,
-  time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`
-}
 
 traceCount = 1;
 
@@ -385,14 +315,6 @@ scribbles.trace.headers = function traceContext(customHeader){
   },headers || {}),customHeader)
 } // END traceContext
 
-function parceTracestate(tracestate){
-  return tracestate.split(',')
-            .reduce((accumulator, currentValue)=>{
-                  const [key, value] = currentValue.split('=')
-                  accumulator.push({key,value})
-                  return accumulator
-              },[])
-} // END parceTracestate
 
 scribbles.config = function scribblesConfig(opts){
 
@@ -424,8 +346,11 @@ scribbles.config = function scribblesConfig(opts){
   config.levels.forEach((logLevel,index) => {
     if(index <= config.logRange){
       scribbles[logLevel] = scribble.bind(null,null,logLevel)
-      scribbles[logLevel].at = function at(from,err, vals, message){
-        return scribble(from,logLevel,err, vals, message)
+      scribbles[logLevel].at = function at(from, label, value, error){
+        const args = Array.prototype.slice.call(arguments)
+        // we need to do this dance because
+        // we don't want to manually passing undefined that wasn't passed by the colour
+        return scribble.apply(null,args)
       }
     } else {
       // Log levels below the seletecd level will be suppressed.
@@ -436,8 +361,10 @@ scribbles.config = function scribblesConfig(opts){
   }) // END config.levels.forEach
 
   scribbles.status = scribble.bind(null,null,"statusX")
-  scribbles.status.at = function at(from,err, vals, message){
-    return scribble(from,"statusX",err, vals, message)
+  scribbles.status.at = function at(from,label, value, error){
+    const args = Array.prototype.slice.call(arguments)
+    args[1] = "statusX"
+    return scribble.apply(null,args)
   }
 
   config.__compile = compile(config.format)
@@ -455,63 +382,4 @@ if(fs.existsSync(__dirname+'/../../package.json')){
   }
 }
 
-//=====================================================
-//================================================ Util
-//=====================================================
-
-function deepMerge(target, source) {
-  if(typeof target === 'object' && undefined === source) return target;
-  if(typeof target !== 'object' || typeof source !== 'object') return false; // target or source or both ain't objects, merging doesn't make sense
-  for(var prop in source) {
-    if(!source.hasOwnProperty(prop)) continue; // take into consideration only object's own properties.
-    if(prop in target) { // handling merging of two properties with equal names
-      if(typeof target[prop] !== 'object') {
-        target[prop] = source[prop];
-      } else {
-        if(typeof source[prop] !== 'object') {
-          target[prop] = source[prop];
-        } else {
-          if(target[prop].concat && source[prop].concat) { // two arrays get concatenated
-            target[prop] = target[prop].concat(source[prop]);
-          } else { // two objects get merged recursively
-            target[prop] = deepMerge(target[prop], source[prop]);
-          }
-        }
-      }
-    } else { // new properties get added to target
-      target[prop] = source[prop];
-    }
-  }
-  return target;
-}
-
-//=====================================================
-//====================================== forwardHeaders
-//=====================================================
-const http = require('http')
-const reqHttp = http.request.bind(http)
-
-http.request = function httpRequestWrapper(url, options, callback){
-
-  if( ! config.forwardHeaders){
-    return reqHttp(url, options, callback)
-  }
-
-  if('function' === typeof options){
-    callback = options
-    options = {}
-  }
-
-  if('object' === typeof url){
-    options = url;
-    url = null;
-  }
-
-  options.headers = scribbles.trace.headers(options.headers || {})
-
-  if(url){
-    return reqHttp(url, options, callback)
-  } else {
-    return reqHttp(options, callback)
-  }
-}
+hijacker(scribbles)
