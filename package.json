@@ -1,7 +1,7 @@
 {
   "name": "scribbles",
-  "version": "0.7.2",
-  "description": "Scribbles is a log and tracing lib for NodeJs",
+  "version": "1.0.0",
+  "description": "Scribbles is a log and tracing lib for Node",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

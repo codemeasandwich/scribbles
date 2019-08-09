@@ -54,7 +54,7 @@ scribbles.log("hello world")
 ## Logging signature
 
 ```
-scribbles[logLevel](message/err,[values,[additional error message]])
+scribbles[logLevel](message, [value, [error]])
 ```
 
 ## How to customise log output
@@ -87,7 +87,6 @@ There is a `config` that takes a configuration object.
   * context:
     * `fileName`: The file name
     * `lineNumber`: The line in the file
-    * `exeType`: The context where the log was called
   * input:  
     * `message`: Message to log
     * `value`: Values to log
