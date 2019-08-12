@@ -15,6 +15,7 @@ const status = require('./src/status');
 const loader = require('./src/loader');
 const hijacker = require('./src/hijacker');
 const config = require('./src/config');
+const args2keys = require('./src/args2keys');
 const { deepMerge, getSource } = require('./src/helpers');
 const { parceTracestate } = require('./src/utils');
 
@@ -86,45 +87,49 @@ function myNamespace(){
   return correlaterValue
 
 } // END myNamespace
+
+const notUsed = {not:'used'}
+
 function scribble(from, level, ...args){
-  if(args.length)
-  if(err instanceof Error){
 
-  }
-}
 
-function scribble(from, level, err, vals, message){
+    let statusinfo, now;
+    if("status" === level){
+      const vals = args[1]
+      statusinfo = vals.statusinfo;
+      now = vals.now
 
-    if("statusX" === level){
+      args[1] = vals.value;
+    }
+
+    let { message, value, error } = args2keys(args, notUsed);
+
+     if("statusX" === level){
       const now = new Date();
       from = from || getSource(new Error().stack)
       status().then( statusinfo => {
         Object.assign(statusinfo.process,pValues)
-        scribble(from, "status", err, { statusinfo,vals, now}, message)
+        scribble(from, "status", message, { statusinfo,value, now}, error)
       })
       return
     }
-    let statusinfo, now;
-    if("status" === level){
-      statusinfo = vals.statusinfo;
-      now = vals.now
-      vals = vals.vals;
+
+    const originalMessage = notUsed !== error
+                         && notUsed !== message ? error.message : undefined;
+
+//console.log({ message, originalMessage,value, error })
+
+    if(notUsed === message
+    && notUsed !== error){
+      message = error.message;
     }
+
 
     let correlaterValue = myNamespace()
 
     const { traceId, spanId, span64, tracestate, spanLabel } = correlaterValue('traceVals') || {};
 
-    const isErr = err instanceof Error;
-  //  const level = isErr ? "error" : level || this.level || "log"
-
-    if( ! isErr
-    && "string" !== typeof err
-    && "number" !== typeof err){
-      err = JSON.stringify(err)
-    } // END if is a basic value
-
-    const stackTrace = isErr ? err.stack.split("\n")
+    const stackTrace = notUsed !== error ? error.stack.split("\n")
                                       .slice(1)// if there is a custom message leave the original in the trace
                                       .filter( line => !!line) // some stacks may have an extra empty line
                                       .map((line) => line.trim().indexOf("at") === 0 ? line.split(/at(.+)/)[1].trim() : line.trim() )
@@ -156,12 +161,12 @@ function scribble(from, level, err, vals, message){
       context:{
         fileName: from.file,
         lineNumber: from.line,
-        exeType: from.type
+      //  exeType: from.type
       },
       input:{
-        message:         isErr && message ? message     : err && err.message ? err.message : err,
-        originalMessage: isErr && message ? err.message : undefined,
-        value:vals,
+        message: notUsed === message ? undefined : message,//:         isErr && message ? message     : err && err.message ? err.message : err,
+        originalMessage,//: isErr && message ? err.message : undefined,
+        value: notUsed === value ? undefined : value,//:vals,
                             // remove the message line from trace
                             // as its in the "originalMessage" field
         stackTrace
@@ -172,9 +177,13 @@ function scribble(from, level, err, vals, message){
 
         const time  = moment(body.time).format(config.time);
 
-        const outputMessage    = message || err && err.message || err;
-        const outputValue      = "object" === typeof vals ? JSON.stringify(vals) : '';
-        const outputStackTrace = isErr ? "\n"+( message ? "Error: "+err.message+"\n":"")+all.stackTrace.map(line => ` at ${line}`).join("\n") : "";
+        const outputMessage    = all.message;
+        const outputValue      = notUsed === value ? ''
+                                                   : value === undefined ? 'undefined'
+                                                                         : 'function' === typeof value ? value.toString()
+                                                                                                       : JSON.stringify(value);
+
+        const outputStackTrace = notUsed !== error ? "\n"+( originalMessage ? "Error: "+originalMessage+"\n":"")+stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
         // based on: https://www.npmjs.com/package/tracer
         return config.__compile(Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
@@ -216,6 +225,7 @@ scribbles.trace = function trace(opts, next){
 
   const traceVals = {};
 
+  // TODO: maybe this can be changed to a switch
   if('object' === typeof opts){
     traceVals.headers = opts.headers;
     spanLabel  = opts.spanLabel

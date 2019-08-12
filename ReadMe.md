@@ -1,6 +1,6 @@
 # Scribbles
 
-**scribbles** is a log and tracing lib for NodeJs
+**scribbles** is a log and tracing lib for Node
 
 [![npm version](https://badge.fury.io/js/scribbles.svg)](https://www.npmjs.com/package/scribbles) [![Buy me a coffee](https://img.shields.io/badge/buy%20me-a%20coffee-orange.svg)](https://www.buymeacoffee.com/codemeasandwich)
 
@@ -14,7 +14,7 @@
 * [Tracing logs](#how-to-trace-logs)
   * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
   * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
-  * Can **automatically** inject IDs into outgoing headers. Works with [axios](https://www.npmjs.com/package/axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
+  * Can **automatically** inject IDs into outgoing headers. Works with [axios](https://www.npmjs.com/package/axios#axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
 * More insight in your logs
   * Git repository name
   * Current branch
@@ -100,10 +100,11 @@ There is a `config` that takes a configuration object.
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
-* **headers** [string/array] - **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
+* **headers** [string/array]
+  * **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
   * array of header names to forward
 * **forwardHeaders** [boolean] - *defaults: `false`*
-  * scribbles will attempt to intercept all outgoing requests and inject the headers **automatically** :sunglasses:
+  * scribbles will attempt to intercept all outgoing requests and inject the headers :sunglasses:
   * out of the box support for [axios](https://www.npmjs.com/package/axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
 
 ---
@@ -301,14 +302,17 @@ Instrumenting web frameworks, storage clients, application code, etc. to make tr
 
 ---
 
-### Example:
+### Example: Using [Express](https://expressjs.com/) & [Axios](https://github.com/axios/axios#axios) within [AWS](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-request-tracing.html)
 
 ```js
 const scribbles = require('scribbles');
 const axios     = require('axios');
 const express   = require('express');
 
-scribbles.config({ forwardHeaders:true });
+scribbles.config({
+  forwardHeaders:true,
+  headers:["X-Amzn-Trace-Id"]
+});
 
 const app = express();
 
