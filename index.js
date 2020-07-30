@@ -358,6 +358,7 @@ scribbles.config = function scribblesConfig(opts){
       scribbles[logLevel] = scribble.bind(null,null,logLevel)
       scribbles[logLevel].at = function at(from, label, value, error){
         const args = Array.prototype.slice.call(arguments)
+              args.splice(1, 0, logLevel);
         // we need to do this dance because
         // we don't want to manually passing undefined that wasn't passed by the colour
         return scribble.apply(null,args)
