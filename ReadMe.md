@@ -14,6 +14,7 @@
 * [Tracing logs](#how-to-trace-logs)
   * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
   * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
+  * scribbles will attempt to intercept all outgoing requests and inject the headers :sunglasses:
   * Can **automatically** inject IDs into outgoing headers. Works with [axios](https://www.npmjs.com/package/axios#axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
 * More insight in your logs
   * Git repository name
@@ -22,6 +23,7 @@
   * Environment: local / dev / prod
 * Static code analysis to log file & line numbers
   * Resolve the calling location **without** the expensive of a stacktrace
+  * If you App is bundle, scribbles try to load with the map file to report the correct source file and line :sunglasses:
 * [Generate performance reports](#performance-monitoring)
   * Detailed metrics on service and host
   * Flag when the eventloop is blocking. This can happen when your app is over-loaded.
@@ -100,12 +102,13 @@ There is a `config` that takes a configuration object.
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
-* **headers** [string/array]
+* **headers** [string/array/null]
   * **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
-  * array of header names to forward
-* **forwardHeaders** [boolean] - *defaults: `false`*
-  * scribbles will attempt to intercept all outgoing requests and inject the headers :sunglasses:
-  * out of the box support for [axios](https://www.npmjs.com/package/axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
+  * `array` of header names to forward
+  * `null` to disable forwarding headers
+* **headersMapping** [object:[array/string]]
+  * An `object` of output keys with input selector values.
+  * Values can be A `string` OR `array of strings`: that will be taken in order of preference to be selected(i.e. If an incoming request has a header named the same as first index. Ues that, else check the next index and so on)
 
 ---
 

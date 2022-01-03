@@ -1,5 +1,5 @@
 require('./src/checkNodeVer')
-
+require('source-map-support').install()
 var sVer = require('./package.json').version;
 
 const compile = require("string-template/compile");
@@ -12,7 +12,7 @@ const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 const exec = require('child_process').execSync
 
 const status = require('./src/status');
-const loader = require('./src/loader');
+//const loader = require('./src/loader');
 const hijacker = require('./src/hijacker');
 const config = require('./src/config');
 const args2keys = require('./src/args2keys');
@@ -21,11 +21,17 @@ const { parceTracestate } = require('./src/utils');
 
 const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
-const gitValues = {
-  short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
-  repo:exec('basename -s .git `git config --get remote.origin.url`',{ encoding: 'utf8' }).trim(),
-  branch:exec('git rev-parse --abbrev-ref HEAD',{ encoding: 'utf8' }).trim()
-};
+let gitValues = { short:"", repo:"", branch:"" }
+
+try{
+  gitValues = {
+    short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
+    repo:exec('basename -s .git `git config --get remote.origin.url`',{ encoding: 'utf8' }).trim(),
+    branch:exec('git rev-parse --abbrev-ref HEAD',{ encoding: 'utf8' }).trim()
+  };
+}catch(err){
+ // console.warn("Problem reading GIT",err)
+}
 
 config.defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 
@@ -294,6 +300,26 @@ scribbles.middleware = {
       }
     }
 
+    if (config.headersMapping) {
+        if ("object" !== typeof config.headerMapping) {
+            throw new Error("headerMapping must be an Object. Was passed a "+typeof config.headersMapping)
+        } // END NOT Object
+        Object.keys(config.headerMapping).forEach(targetOutputHeaderName => {
+          let findInputHarderNames = config.headerMapping[targetOutputHeaderName] // should be an Array
+          if ("string" === typeof findInputHarderNames) {
+            findInputHarderNames = [findInputHarderNames]
+          } else if( ! Array.isArray(findInputHarderNames)) {
+            throw new Error("headersMapping keys must map to a String or Array of string")
+          }
+          const foundAHeader = findInputHarderNames.reduce((returnHeaderFeid,findThisHarderKey)=>(
+             returnHeaderFeid||headers[findThisHarderKey]
+          ),false)
+          if ("string" === typeof foundAHeader) {
+            headersOut[targetOutputHeaderName] = foundAHeader
+          }
+        }) // END forEach
+    }//END config.headersMapping
+    
     scribbles.trace({
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],

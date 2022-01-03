@@ -1,6 +1,6 @@
 {
   "name": "scribbles",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Scribbles is a log and tracing lib for Node",
   "main": "index.js",
   "scripts": {
@@ -26,6 +26,7 @@
     "@ashleyw/cls-hooked": "^5.0.1",
     "moment": "^2.24.0",
     "node-hook": "^1.0.0",
+    "source-map-support": "^0.5.21",
     "string-template": "^1.0.0"
   },
   "devDependencies": {}

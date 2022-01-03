@@ -7,7 +7,7 @@ function hijacker(scribbles){
 
   http.request = function httpRequestWrapper(url, options, callback){
 
-    if( ! config.forwardHeaders){
+    if( ! config.headers && ! config.headersMapping ){
       return reqHttp(url, options, callback)
     }
 

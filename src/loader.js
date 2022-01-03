@@ -17,10 +17,10 @@ hook.hook('.js', function processFileForScribblesCalls (source, filename) {
           //TODO: use the list on `resirvedFnNames`
           // if scribbles.***( is NOT a resirvedFnNames
           // then take thats its a LOG & replace with **.at(...)
-
-          if(0 <= line.indexOf("scribbles."+level+"(")) {
-            return line.replace("scribbles."+level+"(",
-                                `scribbles.${level}.at({file:"${path}",line:${index+1}},`)
+          const find = "scribbles."+level+"("
+          const indexOf = line.indexOf(find)
+          if(0 <= indexOf) {
+            return line.replace(find,`scribbles.${level}.at({file:"${path}",line:${index+1},col:${indexOf}},`)
           } // END if
         }// END for
       } // END if

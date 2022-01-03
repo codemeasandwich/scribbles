@@ -37,6 +37,7 @@ function getSource(stack){
     const originFile = stack.split('\n')[2].split('/');
     const file = originFile[originFile.length - 1].split(':')[0];
     const line = originFile[originFile.length - 1].split(':')[1];
+    const col = originFile[originFile.length - 1].split(':')[2];
     let path = originFile.splice(1).join('/')
         path = path[path.length - 1] === ')' ? path.substring(0, path.length - 1) : path;
         path = path.startsWith(appDir) ? path.substr(appDir.length+1) : "/"+path
@@ -44,6 +45,7 @@ function getSource(stack){
       type:originFile[0].split('at').pop().trim().split(" ")[0],
       file,
       line:+line,
+      col,
       path
     } // END return
 } // END getSource

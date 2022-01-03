@@ -33,6 +33,7 @@ console.log();
 scribbles.debug(null);
 scribbles.info(123);
 scribbles.log({foo:'bar'});
+scribbles.warn();
 scribbles.warn(undefined);
 scribbles.error(new Error("an err"));
 console.log();
