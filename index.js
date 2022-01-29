@@ -9,7 +9,6 @@ const os = require('os');
 const fs = require("fs");
 const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
-const exec = require('child_process').execSync
 
 const status = require('./src/status');
 //const loader = require('./src/loader');
@@ -19,21 +18,21 @@ const args2keys = require('./src/args2keys');
 const { deepMerge, getSource } = require('./src/helpers');
 const { parceTracestate } = require('./src/utils');
 
-const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
+const gitValues = require('./src/getGitStatus');
 
-let gitValues = { short:"", repo:"", branch:"" }
+let packageJson_scribbles = {}
 
-try{
-  gitValues = {
-    short:exec('git rev-parse --short HEAD',{ encoding: 'utf8' }).trim(),
-    repo:exec('basename -s .git `git config --get remote.origin.url`',{ encoding: 'utf8' }).trim(),
-    branch:exec('git rev-parse --abbrev-ref HEAD',{ encoding: 'utf8' }).trim()
-  };
-}catch(err){
- // console.warn("Problem reading GIT",err)
+if(fs.existsSync(__dirname+'/../../package.json')){
+  const packageJson = require('../../package.json');
+  if(packageJson.scribbles){
+    packageJson_scribbles = packageJson.scribbles
+  }
 }
 
-config.defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
+const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
+
+
+//config.defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 
 let traceCount = 0, lastActiveSpan;
 const hostname = os.hostname();
@@ -44,13 +43,13 @@ const pValues = {
         user :    process.env.USER,
         vNode:    process.version
       };
-const inUse = {}, cuidPrefix = (gitValues.short.slice(-2)
-                             + (process.ppid ? process.ppid.toString(16).slice(-2)
-                                             : Math.floor(Math.random()*15).toString(16) +
-                                               Math.floor(Math.random()*15).toString(16))
-                             + process.pid.toString(16).slice(-2)
-                             + Math.floor(Math.random()*15).toString(16))
-
+const inUse = {};
+const cuidPrefixRaw = ((process.ppid ? process.ppid.toString(16).slice(-2)
+                              : Math.floor(Math.random()*15).toString(16) +
+                                Math.floor(Math.random()*15).toString(16))
+              + process.pid.toString(16).slice(-2)
+              + Math.floor(Math.random()*15).toString(16))
+let cuidPrefix = gitValues.hash.slice(-2) + cuidPrefixRaw
 
 
 function myNamespace(){
@@ -140,7 +139,7 @@ function scribble(from, level, ...args){
                                       .filter( line => !!line) // some stacks may have an extra empty line
                                       .map((line) => line.trim().indexOf("at") === 0 ? line.split(/at(.+)/)[1].trim() : line.trim() )
                            : undefined
-
+console.log("============",stackTrace)
     from = from || getSource(new Error().stack)
 
     const body = {
@@ -148,7 +147,7 @@ function scribble(from, level, ...args){
       git:{
         repo:gitValues.repo,
         branch:gitValues.branch,
-        gitHash: gitValues.short
+        hash: gitValues.hash
       },
       trace:{
         traceId,
@@ -222,14 +221,13 @@ function scribble(from, level, ...args){
 
 const scribbles = {}
 
-module.exports = scribbles;
 
 
 traceCount = 1;
 
-scribbles.trace = function trace(opts, next){
+function trace(opts, next){
 
-  const traceVals = {};
+  let traceVals = {};
 
   // TODO: maybe this can be changed to a switch
   if('object' === typeof opts){
@@ -278,7 +276,7 @@ scribbles.trace = function trace(opts, next){
     next(traceVals.spanId)
   })
 } // END trace
-
+scribbles.trace = trace
 
 //=====================================================
 //================================ framework middleware
@@ -374,6 +372,26 @@ scribbles.config = function scribblesConfig(opts){
 
   Object.assign(config,opts);
 
+//+++++++++++++++++++++++++++++++++++++ setup git Info
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  if (config.gitEnv) {
+      if (config.gitEnv.hash
+      && process.env[config.gitEnv.hash]) {
+        gitValues.hash = process.env[config.gitEnv.hash].substr(0, 7)
+      }
+      if (config.gitEnv.repo
+      && process.env[config.gitEnv.repo]) {
+        gitValues.repo = process.env[config.gitEnv.repo]
+      }
+      if (config.gitEnv.branch
+      && process.env[config.gitEnv.branch]) {
+        gitValues.branch = process.env[config.gitEnv.branch]
+      }
+  } // END packageJson_scribbles.gitEnv
+  
+  cuidPrefix = gitValues.hash.slice(-2) + cuidPrefixRaw
+
 //+++++++++++++++++++++++++++++++++++ setup log levels
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -410,13 +428,9 @@ scribbles.config = function scribblesConfig(opts){
 
 const resirvedFnNames = Object.keys(scribbles);
 
-scribbles.config();
+scribbles.config(packageJson_scribbles)
 
-if(fs.existsSync(__dirname+'/../../package.json')){
-  const packageJson = require('../../package.json');
-  if(packageJson.scribbles){
-    scribbles.config(packageJson.scribbles)
-  }
-}
 
 hijacker(scribbles)
+
+module.exports = scribbles;

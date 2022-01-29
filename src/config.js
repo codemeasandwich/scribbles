@@ -6,5 +6,5 @@ module.exports = {
   dataOut : undefined,
   //vendor:defaultVendor, // this is the name of the project
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`
+  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`
 }

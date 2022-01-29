@@ -59,7 +59,7 @@ scribbles.log("hello world")
 scribbles[logLevel](message, [value, [error]])
 ```
 
-## How to customise log output
+## How to customise
 
 There is a `config` that takes a configuration object.
 
@@ -69,11 +69,11 @@ There is a `config` that takes a configuration object.
   * A callback to receive an object representing the log entry
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
-* **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{gitHash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*
+* **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*
   * git:
     * `repo`: The git repository name as it appears on the origin
     * `branch`: The current git branch
-    * `gitHash`: Short git hash of current commit
+    * `hash`: Short git hash of current commit
   * trace:  
     * `traceId`: Used for distributed tracing in microservices [**[more](https://www.w3.org/TR/trace-context/#trace-id)**]
     * `spanId`: the execution of a client call [**[more](https://www.w3.org/TR/trace-context/#parent-id)**]
@@ -109,6 +109,10 @@ There is a `config` that takes a configuration object.
 * **headersMapping** [object:[array/string]]
   * An `object` of output keys with input selector values.
   * Values can be A `string` OR `array of strings`: that will be taken in order of preference to be selected(i.e. If an incoming request has a header named the same as first index. Ues that, else check the next index and so on)
+* **gitEnv** [Object] - the **attribute names** at the **end** of their `process.env`
+  * `hash`: attribute name of git short hash
+  * `repo`: attribute name of git repository name
+  * `branch`: attribute name of git branch
 
 ---
 
@@ -133,7 +137,7 @@ Just add a "scribbles" attribute
      "mode":"test-runner",
      "logLevel":"warn",
      "levels":["danger", "error", "warn", "log", "info", "debug"],
-     "format":"{time} [{mode}#{gitHash}] <{logLevel}> {message}"
+     "format":"{time} [{mode}#{hash}] <{logLevel}> {message}"
   }
 }
 ```
@@ -145,7 +149,7 @@ scribbles.config({
    mode:'test-runner',
    logLevel:"warn", //only output warning messages or higher
    levels:["danger", "error", "warn", "log", "info", "debug"],
-   format:'{time} [{mode}#{gitHash}] <{logLevel}> {message}'
+   format:'{time} [{mode}#{hash}] <{logLevel}> {message}'
 })
 
 scribbles.danger("hello world")
@@ -171,7 +175,7 @@ scribbles.log("hello world")
    git:{
       repo:"myRepo",
       branch:"master",
-      gitHash:"3d608bf"
+      hash:"3d608bf"
    },
    trace:{
       ...
@@ -244,6 +248,53 @@ setInterval(function(){
 ```
 
 *This will give you a performance snapshot every 5 seconds.*
+
+---
+
+## Using webpack and GIT but only deploying the bundle?
+ 
+**You can get Scribbles to store the Git info at build time, in order to show in the run time logs**
+
+Via **webpack.config.js**
+
+Here is how to add git status to you logs.
+
+```js
+//...
+const ScribblesWithGitInBundle = require('scribbles/gitStatus');
+//...
+module.exports = {
+//...
+  plugins: [
+    ScribblesWithGitInBundle,
+//  ...
+  ]
+//...
+};
+```
+That's it!
+
+#### If your **git** values are passed by the `process.env`.
+
+You can select then via the config opts.
+
+Via **package.js**
+
+```json
+{
+  ...,
+  "scribbles":{
+     ...,
+     "gitEnv": {
+        "hash":"GITHUB_SHA",
+        "repo":"GITHUB_REPOSITORY",
+        "branch":"GITHUB_REF"
+     }
+  }
+}
+```
+
+**Tip**: If you are using **Heroku**, the git hash is storted in the *"SOURCE_VERSION"*
 
 ---
 
