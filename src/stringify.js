@@ -1,4 +1,10 @@
-
+function getObjName(val){
+  if(val.constructor
+  && "Object" !== val.constructor.name){
+    return val.constructor.name + " "
+  }
+  return ""
+}
 
 function stringify(val,refs = []){
       if (val instanceof Date && !isNaN(val)) {
@@ -20,8 +26,9 @@ function stringify(val,refs = []){
         return `[ ${val.map(v=>wrapRecursive(v,refs)).join(", ")} ]`
     }
     if(val && "object" === typeof val){
-        return `{ ${ Object.keys(val)
-              .filter(name=> val.hasOwnProperty(name))
+
+        return `${getObjName(val)}{ ${ Object.keys(val)
+              .filter(name=> val.hasOwnProperty ? val.hasOwnProperty(name) : true)
               .map(name => `${name}:${wrapRecursive(val[name],refs)}`)
               .join(", ") } }`
     }
@@ -32,9 +39,9 @@ function wrapRecursive(val,refs){
   //debugger
   if(refs.includes(val)){
     if(Array.isArray(val)){
-      return `[ ..! ]`
+      return `[ ...! ]`
     } else {
-      return `{ ..! }`
+      return `{ ...${getObjName(val)||"!"} }`
     }
   }
 
