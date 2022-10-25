@@ -17,6 +17,7 @@ const config = require('./src/config');
 const args2keys = require('./src/args2keys');
 const { deepMerge, getSource } = require('./src/helpers');
 const { parceTracestate } = require('./src/utils');
+const stringify = require('./src/stringify');
 
 const gitValues = require('./src/getGitStatus');
 
@@ -186,7 +187,7 @@ console.log("============",stackTrace)
         const outputValue      = notUsed === value ? ''
                                                    : value === undefined ? 'undefined'
                                                                          : 'function' === typeof value ? value.toString()
-                                                                                                       : JSON.stringify(value);
+                                                                                                       : stringify(value);
 
         const outputStackTrace = notUsed !== error ? "\n"+( originalMessage ? "Error: "+originalMessage+"\n":"")+stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
@@ -317,7 +318,7 @@ scribbles.middleware = {
           }
         }) // END forEach
     }//END config.headersMapping
-    
+
     scribbles.trace({
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],
@@ -389,7 +390,7 @@ scribbles.config = function scribblesConfig(opts){
         gitValues.branch = process.env[config.gitEnv.branch]
       }
   } // END packageJson_scribbles.gitEnv
-  
+
   cuidPrefix = gitValues.hash.slice(-2) + cuidPrefixRaw
 
 //+++++++++++++++++++++++++++++++++++ setup log levels
