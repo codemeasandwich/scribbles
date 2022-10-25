@@ -6,7 +6,7 @@ function getObjName(val){
   return ""
 } // END getObjName
 
-function stringify(val,refs = []){
+function stringify(val,refs = [],name=""){
       if (val instanceof Date && !isNaN(val)) {
         return `Date(${val.toJSON()})`
     }
@@ -17,14 +17,24 @@ function stringify(val,refs = []){
 
       const [start]   = val.toString().split(")");
       const isArrow   = ! start.includes("function")
-      const [name,args] = start.replace("function",'')
+      const [nameA,argsB] = start.replace("function",'')
                                .replace(/ /g,'')
                                .split("(")
-        return `${
-          name||
-        //  val.name||
-          (isArrow?"":"ƒ")
-        }(${args})${
+        let realName = name
+
+        if(isArrow){
+          if(name !=val.name)
+            realName = val.name
+          else
+            realName = ""
+        } else {
+          if(name === val.name)
+            realName = "ƒ"
+          else
+            realName = val.name
+        }
+
+        return `${realName}(${argsB})${
           isArrow?"=>":""
         }{-}`
     }
@@ -47,7 +57,7 @@ function stringify(val,refs = []){
     return `${val}`
 } // END stringify
 
-function wrapRecursive(val,refs){
+function wrapRecursive(val,refs,name){
   //debugger
   if(refs.includes(val)){
     if(Array.isArray(val)){
@@ -63,18 +73,20 @@ function wrapRecursive(val,refs){
     refs = refs.concat(val)
   }
 
-  return stringify(val,refs)
+  return stringify(val,refs,name)
 } // END wrapRecursive
-/*
+/*var a2 = ()=>{}
+var b = {c:a2,a2}
 var a = [1,2,3]
 a.push(a)
 
 var y = {s:6}
 a.push(y)
-
+y.y = y
 stringify({
   a,
   b:null,
+  b2:b,
   c:",",
     err:new Error("qwe"),
   d:undefined,
@@ -82,7 +94,7 @@ stringify({
   f:()=>{},
   g:Symbol("s"),
   a1:a,
-    w:window,
+//    w:window,
     x:new Date(),
     y,
     z:NaN
