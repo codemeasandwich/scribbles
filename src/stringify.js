@@ -15,11 +15,18 @@ function stringify(val,refs = []){
     }
     if("function" === typeof val){
 
-      const [start] = val.toString().split(")");
-      const isArrow = ! start.includes("function")
-      const [name,args] = start.replace("function",'').split("(")
-
-        return `${name.replace(/ /g,'')||(isArrow?"":"ƒ")}(${args.replace(/ /g,'')})${isArrow?"=>":""}{-}`
+      const [start]   = val.toString().split(")");
+      const isArrow   = ! start.includes("function")
+      const [name,args] = start.replace("function",'')
+                               .replace(/ /g,'')
+                               .split("(")
+        return `${
+          name||
+        //  val.name||
+          (isArrow?"":"ƒ")
+        }(${args})${
+          isArrow?"=>":""
+        }{-}`
     }
     if ("string" === typeof val) {
         return `”${val}”`
