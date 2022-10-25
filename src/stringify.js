@@ -4,7 +4,7 @@ function getObjName(val){
     return val.constructor.name + " "
   }
   return ""
-}
+} // END getObjName
 
 function stringify(val,refs = []){
       if (val instanceof Date && !isNaN(val)) {
@@ -43,7 +43,7 @@ function wrapRecursive(val,refs){
     } else {
       return `{ ...${getObjName(val)||"!"} }`
     }
-  }
+  } // END refs.includes
 
   if(Array.isArray(val) && val.length){
     refs = refs.concat([val])
@@ -53,5 +53,27 @@ function wrapRecursive(val,refs){
 
   return stringify(val,refs)
 } // END wrapRecursive
+/*
+var a = [1,2,3]
+a.push(a)
 
+var y = {s:6}
+a.push(y)
+
+stringify({
+  a,
+  b:null,
+  c:",",
+    err:new Error("qwe"),
+  d:undefined,
+  e:console.log,
+  f:()=>{},
+  g:Symbol("s"),
+  a1:a,
+    w:window,
+    x:new Date(),
+    y,
+    z:NaN
+})
+*/
 module.exports = stringify
