@@ -14,7 +14,12 @@ function stringify(val,refs = []){
         return val.toString()
     }
     if("function" === typeof val){
-        return `${val.name}()`
+
+      const [start] = val.toString().split(")");
+      const isArrow = ! start.includes("function")
+      const [name,args] = start.replace("function",'').split("(")
+
+        return `${name.replace(/ /g,'')||(isArrow?"":"ƒ")}(${args.replace(/ /g,'')})${isArrow?"=>":""}{-}`
     }
     if ("string" === typeof val) {
         return `”${val}”`
