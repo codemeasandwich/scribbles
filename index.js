@@ -184,7 +184,7 @@ function scribble(from, level, ...args){
         const time  = moment(body.time).format(config.time);
 
         const outputMessage    = all.message;
-        const outputValue      = notUsed === value ? ''
+        const outputValue      = notUsed === value || ["timeLog","timeEnd"].includes(level) ? ''
                                                    : value === undefined ? 'undefined'
                                                                          : 'function' === typeof value ? value.toString()
                                                                                                        : stringify(value);
@@ -422,6 +422,36 @@ scribbles.config = function scribblesConfig(opts){
     args[1] = "statusX"
     return scribble.apply(null,args)
   }
+
+  const times = {}
+
+  function timePrint(from,level,label){
+    label = label+""
+    if( ! times[label]){
+      throw new Error(`Timer '${label}' does not exist`)
+    }
+    const now = performance.now()
+    const milliseconds = now - times[label]
+    scribble(from,level,`${label}: ${milliseconds} milliseconds.`,{label,milliseconds})
+  } // END timePrint
+
+  scribbles.time = (label)=>{
+    label = label+""
+    if(times[label]){
+      throw new Error(`Timer '${label}' already exists`)
+    }
+    times[label] = performance.now()
+  } // END time
+
+  scribbles.timeLog = (label)=>{
+    timePrint(getSource(new Error().stack),"timeLog",label)
+  } // END timeLog
+
+  scribbles.timeEnd = (label)=>{
+      label = label+""
+      timePrint(getSource(new Error().stack),"timeEnd",label)
+      delete times[label]
+  }// END timeEnd
 
   config.__compile = compile(config.format)
 

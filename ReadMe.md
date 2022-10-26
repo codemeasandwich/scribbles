@@ -252,7 +252,7 @@ setInterval(function(){
 ---
 
 ## Using webpack and GIT but only deploying the bundle?
- 
+
 **You can get Scribbles to store the Git info at build time, in order to show in the run time logs**
 
 Via **webpack.config.js**
@@ -295,6 +295,33 @@ Via **package.js**
 ```
 
 **Tip**: If you are using **Heroku**, the git hash is storted in the *"SOURCE_VERSION"*
+
+---
+
+## How to analyzing performance of pieces of your code
+
+You can start a timer to calculate the duration of a specific operation. To start one, call the `scribbles.time("...")` method, giving it a name as the only parameter. To stop the timer, and to get the elapsed time in milliseconds, just call the `scribbles.timeEnd("...")` method, again passing the timer's name as the parameter.
+
+There are 3 functions:
+
+1. `scribbles.time()` - method starts a timer you can use to track how long an operation takes.
+2. `scribbles.timeLog()` - method logs the current value of a timer that was previously started by calling `time()`.
+3. `scribbles.timeEnd()` - When you call with the same name, this will output the time, in milliseconds, that elapsed since the timer was started.
+
+```js
+scribbles.time("Yo")
+setTimeout(()=>{
+  scribbles.timeLog("Yo")
+  setTimeout(()=>{
+    scribbles.timeEnd("Yo")
+  }, 300)
+}, 400)
+```
+Output: You see the time it took to run the code
+```cli
+2022-10-26T12:49:52.111 <timeLog> app.js:23 Yo: 425.43470895290375 milliseconds.
+2022-10-26T12:49:52.423 <timeEnd> app.js:25 Yo: 740.1822509765625 milliseconds.
+```
 
 ---
 
