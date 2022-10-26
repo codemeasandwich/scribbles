@@ -63,3 +63,30 @@ scribbles.trace('in_trace',()=>{
 function foo(){
   return "abc"
 }
+
+var a2 = ()=>{}
+var b = {c:a2,a2}
+var a = [1,2,3]
+a.push(a)
+
+var y = {s:6}
+a.push(y)
+y.y = y
+scribbles.log({
+  a,
+  b:null,
+  b2:b,
+  c:",",
+    err:new Error("qwe"),
+  d:undefined,
+  e:console.log,
+  f:(a,b)=>({}),
+  f2:function(c,d){},
+  f3:function doog(e,f){},
+  g:Symbol("s"),
+  a1:a,
+  g:global,
+    x:new Date(),
+    y,
+    z:NaN
+})

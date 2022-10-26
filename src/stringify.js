@@ -58,7 +58,7 @@ function stringify(val,refs = [],name=""){
 } // END stringify
 
 function wrapRecursive(val,refs,name){
-  //debugger
+
   if(refs.includes(val)){
     if(Array.isArray(val)){
       return `[ ...! ]`
@@ -75,38 +75,5 @@ function wrapRecursive(val,refs,name){
 
   return stringify(val,refs,name)
 } // END wrapRecursive
-/*stringify({
-  b2:b,
-  e:console.log,
-  f:(a,b)=>({}),
-  f2:function(c,d){},
-  f3:function doog(e,f){}
-})
-var a2 = ()=>{}
-var b = {c:a2,a2}
-var a = [1,2,3]
-a.push(a)
 
-var y = {s:6}
-a.push(y)
-y.y = y
-stringify({
-  a,
-  b:null,
-  b2:b,
-  c:",",
-    err:new Error("qwe"),
-  d:undefined,
-  e:console.log,
-  f:(a,b)=>({}),
-  f2:function(c,d){},
-  f3:function doog(e,f){},
-  g:Symbol("s"),
-  a1:a,
-//    w:window,
-    x:new Date(),
-    y,
-    z:NaN
-})
-*/
 module.exports = stringify
