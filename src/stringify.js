@@ -51,7 +51,7 @@ function stringify(val,refs = [],name=""){
 
         return `${getObjName(val)}{ ${ Object.keys(val)
               .filter(name=> val.hasOwnProperty ? val.hasOwnProperty(name) : true)
-              .map(name => `${name}:${wrapRecursive(val[name],refs)}`)
+              .map(name => `${name}:${wrapRecursive(val[name],refs,name)}`)
               .join(", ") } }`
     }
     return `${val}`
@@ -75,7 +75,14 @@ function wrapRecursive(val,refs,name){
 
   return stringify(val,refs,name)
 } // END wrapRecursive
-/*var a2 = ()=>{}
+/*stringify({
+  b2:b,
+  e:console.log,
+  f:(a,b)=>({}),
+  f2:function(c,d){},
+  f3:function doog(e,f){}
+})*/
+var a2 = ()=>{}
 var b = {c:a2,a2}
 var a = [1,2,3]
 a.push(a)
@@ -91,7 +98,9 @@ stringify({
     err:new Error("qwe"),
   d:undefined,
   e:console.log,
-  f:()=>{},
+  f:(a,b)=>({}),
+  f2:function(c,d){},
+  f3:function doog(e,f){},
   g:Symbol("s"),
   a1:a,
 //    w:window,
@@ -99,5 +108,5 @@ stringify({
     y,
     z:NaN
 })
-*/
-module.exports = stringify
+
+//module.exports = stringify
