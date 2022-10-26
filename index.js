@@ -140,7 +140,7 @@ function scribble(from, level, ...args){
                                       .filter( line => !!line) // some stacks may have an extra empty line
                                       .map((line) => line.trim().indexOf("at") === 0 ? line.split(/at(.+)/)[1].trim() : line.trim() )
                            : undefined
-console.log("============",stackTrace)
+//console.log("============",stackTrace)
     from = from || getSource(new Error().stack)
 
     const body = {
