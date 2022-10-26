@@ -81,7 +81,7 @@ function wrapRecursive(val,refs,name){
   f:(a,b)=>({}),
   f2:function(c,d){},
   f3:function doog(e,f){}
-})*/
+})
 var a2 = ()=>{}
 var b = {c:a2,a2}
 var a = [1,2,3]
@@ -108,5 +108,5 @@ stringify({
     y,
     z:NaN
 })
-
-//module.exports = stringify
+*/
+module.exports = stringify
