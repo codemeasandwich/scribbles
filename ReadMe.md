@@ -43,8 +43,6 @@ yarn add scribbles
 
 ## How to use
 
-:exclamation: For the best performance **scribbles** should be included as the **first module** in your project :exclamation:
-
 ```js
 const scribbles = require('scribbles');
 
