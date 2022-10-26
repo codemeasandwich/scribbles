@@ -341,6 +341,7 @@ scribbles.trace.headers = function traceContext(customHeader){
   const { traceId, spanId, span64, tracestate, version,flag, headers } = correlaterValue('traceVals') || {};
 
   return deepMerge(Object.assign({
+    "x-git-hash":gitValues && gitValues.hash || undefined,
     traceparent:`${version||'00'}-${traceId}-${spanId}-${flag||'01'}`,
     tracestate:tracestate.filter(span=> config.vendor !== span.key)
     .reduce((arr, {key,value}) => {
