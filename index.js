@@ -291,20 +291,39 @@ scribbles.middleware = {
 
     let headersOut = {}
     if(config.headers){
-      if('string' === typeof config.headers && headers[config.headers]){
-        headersOut[config.headers] = headers[config.headers]
-      } else if(Array.isArray(config.headers) && 0 < config.headers.length){
-          headersOut = config.headers.reduce((all,key)=> headers[key] ? Object.assign(all,{[key] : headers[key]})
-                                                                   : all,{})
+
+      let configHeaders = config.headers
+
+      if( ! Array.isArray(configHeaders)){
+        configHeaders = [configHeaders]
       }
-    }
+      configHeaders = configHeaders.filter(key => key
+                                               && ('string' === typeof key
+                                               ||   key instanceof RegExp))
+                                   .map(key => 'string' === typeof key
+                                            && isValidRegex(key) ? stringToRegex(key)
+                                                                 : key)
+      headersOut = configHeaders.reduce((all,key)=> {
+          if(key instanceof RegExp){
+            Object.keys(headers)
+                  .forEach(headerName => {
+                    if(key.test(headerName)){
+                      all[headerName] = headers[headerName]
+                    } // END if
+                  })// END forEach
+          } else if(headers[key]){
+            all[key] = headers[key]
+          }// END else if
+          return all
+      },{}) // END reduce
+    } // END if config.headers
 
     if (config.headersMapping) {
-        if ("object" !== typeof config.headerMapping) {
-            throw new Error("headerMapping must be an Object. Was passed a "+typeof config.headersMapping)
+        if ("object" !== typeof config.headersMapping) {
+            throw new Error("headersMapping must be an Object. Was passed a "+typeof config.headersMapping)
         } // END NOT Object
-        Object.keys(config.headerMapping).forEach(targetOutputHeaderName => {
-          let findInputHarderNames = config.headerMapping[targetOutputHeaderName] // should be an Array
+        Object.keys(config.headersMapping).forEach(targetOutputHeaderName => {
+          let findInputHarderNames = config.headersMapping[targetOutputHeaderName] // should be an Array
           if ("string" === typeof findInputHarderNames) {
             findInputHarderNames = [findInputHarderNames]
           } else if( ! Array.isArray(findInputHarderNames)) {
@@ -462,6 +481,19 @@ const resirvedFnNames = Object.keys(scribbles);
 
 scribbles.config(packageJson_scribbles)
 
+function isValidRegex(s) {
+  try {
+    const m = s.match(/^([/~@;%#'])(.*?)\1([gimsuy]*)$/);
+    return m ? !!new RegExp(m[2],m[3])
+        : false;
+  } catch (e) {
+    return false
+  }
+}
+function stringToRegex(s) {
+   const m = s.match(/^([/~@;%#'])(.*?)\1([gimsuy]*)$/);
+   return m ? new RegExp(m[2], m[3]) : new RegExp(s);
+}
 
 hijacker(scribbles)
 
