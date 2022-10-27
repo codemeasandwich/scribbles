@@ -300,27 +300,27 @@ Via **package.js**
 
 ## How to analyzing performance of pieces of your code
 
-You can start a timer to calculate the duration of a specific operation. To start one, call the `scribbles.time("...")` method, giving it a name as the only parameter. To stop the timer, and to get the elapsed time in milliseconds, just call the `scribbles.timeEnd("...")` method, again passing the timer's name as the parameter.
+You can start a timer to calculate the duration of a specific operation. To start one, call the `scribbles.timer(tag,[message])` function, giving it a name and an optional message. To stop the timer, just call the `scribbles.timerEnd(tag,[message])` function, again passing the timer's name as the first parameter.
 
 There are 3 functions:
 
-1. `scribbles.time()` - method starts a timer you can use to track how long an operation takes.
-2. `scribbles.timeLog()` - method logs the current value of a timer that was previously started by calling `time()`.
-3. `scribbles.timeEnd()` - When you call with the same name, this will output the time, in milliseconds, that elapsed since the timer was started.
+1. `scribbles.timer()` - Starts and/or logs the current value a timer based on the tag passed to the function.
+3. `scribbles.timerEnd()` - logs the current value a timer and removes it, to be used later.
 
 ```js
-scribbles.time("Yo")
+scribbles.timer("Yo")
 setTimeout(()=>{
-  scribbles.timeLog("Yo")
+  scribbles.timer("Yo","123")
   setTimeout(()=>{
-    scribbles.timeEnd("Yo")
+    scribbles.timerEnd("Yo","done!")
   }, 300)
 }, 400)
 ```
 Output: You see the time it took to run the code
 ```cli
-2022-10-26T12:49:52.111 <timeLog> app.js:23 Yo: 425.43470895290375 milliseconds.
-2022-10-26T12:49:52.423 <timeEnd> app.js:25 Yo: 740.1822509765625 milliseconds.
+2022-10-27T13:04:52.133 <timer> app.js:18 Yo (+0ms|0ms)  
+2022-10-27T13:04:52.557 <timer> app.js:20 Yo:123 (+419ms|419ms)  
+2022-10-27T13:04:52.869 <timerEnd> app.js:22 Yo:done! (+323ms|742ms)
 ```
 
 ---

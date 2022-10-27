@@ -120,7 +120,7 @@ function scribble(from, level, ...args){
       return
     }
 
-    const originalMessage = notUsed !== error
+    let originalMessage = notUsed !== error
                          && notUsed !== message ? error.message : undefined;
 
 //console.log({ message, originalMessage,value, error })
@@ -142,6 +142,10 @@ function scribble(from, level, ...args){
                            : undefined
 //console.log("============",stackTrace)
     from = from || getSource(new Error().stack)
+
+    if(this.originalMessage){
+      originalMessage = this.originalMessage
+    }
 
     const body = {
       v:sVer,
@@ -184,7 +188,7 @@ function scribble(from, level, ...args){
         const time  = moment(body.time).format(config.time);
 
         const outputMessage    = all.message;
-        const outputValue      = notUsed === value || ["timeLog","timeEnd"].includes(level) ? ''
+        const outputValue      = notUsed === value || ["timer","timerEnd"].includes(level) ? ''
                                                    : value === undefined ? 'undefined'
                                                                          : 'function' === typeof value ? value.toString()
                                                                                                        : stringify(value);
@@ -445,33 +449,37 @@ scribbles.config = function scribblesConfig(opts){
 
   const times = {}
 
-  function timePrint(from,level,label){
-    label = label+""
-    if( ! times[label]){
-      throw new Error(`Timer '${label}' does not exist`)
+  function timePrint(from,level,tag,message){
+    tag = tag+""
+    const timeAr = times[tag]
+    let elapsed = 0, increment = 0
+    if( 1 < timeAr.length){
+      const [a,b] = timeAr.slice(-2)
+      increment = b - a
+      elapsed = timeAr[timeAr.length - 1] - timeAr[0]
     }
-    const now = performance.now()
-    const milliseconds = now - times[label]
-    scribble(from,level,`${label}: ${milliseconds} milliseconds.`,{label,milliseconds})
+    scribble.call({originalMessage:message},from,level,`${tag}${message?`:${message}`:""} (+${Math.round(increment)}ms|${Math.round(elapsed)}ms)`,{tag,elapsed,increment})
   } // END timePrint
 
-  scribbles.time = (label)=>{
-    label = label+""
-    if(times[label]){
-      throw new Error(`Timer '${label}' already exists`)
-    }
-    times[label] = performance.now()
-  } // END time
-
-  scribbles.timeLog = (label)=>{
-    timePrint(getSource(new Error().stack),"timeLog",label)
+  scribbles.timer = (tag,message)=>{
+    tag = tag+""
+    const t = times[tag] || []
+    t.push(performance.now())
+    times[tag] = t
+    timePrint(getSource(new Error().stack),"timer",tag,message)
   } // END timeLog
 
-  scribbles.timeEnd = (label)=>{
-      label = label+""
-      timePrint(getSource(new Error().stack),"timeEnd",label)
-      delete times[label]
+  scribbles.timerEnd = (tag,message)=>{
+      tag = tag+""
+      if( ! times[tag]){
+        throw new Error(`Timer '${tag}' does not exist`)
+      }
+      times[tag].push(performance.now())
+      timePrint(getSource(new Error().stack),"timerEnd",tag,message)
+      delete times[tag]
   }// END timeEnd
+
+
 
   config.__compile = compile(config.format)
 
