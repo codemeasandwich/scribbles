@@ -102,7 +102,9 @@ There is a `config` that takes a configuration object.
   * These log levels will also be available as functions on scribbles
 * **headers** [string/array/null]
   * **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
-  * `array` of header names to forward
+  * `string` of a header name to forward
+  * `RegExp` to match header names to forward
+  * `array` of header names to forward. Can exact matching `string`s and/or `RegExp`s.
   * `null` to disable forwarding headers
 * **headersMapping** [object:[array/string]]
   * An `object` of output keys with input selector values.
@@ -389,7 +391,6 @@ const axios     = require('axios');
 const express   = require('express');
 
 scribbles.config({
-  forwardHeaders:true,
   headers:["X-Amzn-Trace-Id"]
 });
 
