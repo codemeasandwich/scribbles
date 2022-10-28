@@ -1,3 +1,7 @@
+function validatingPropertyName(name){
+  return /^(?!\d)[\w$]+$/.test(name)
+}
+
 function getObjName(val){
   if(val.constructor
   && "Object" !== val.constructor.name){
@@ -51,7 +55,9 @@ function stringify(val,refs = [],name=""){
 
         return `${getObjName(val)}{ ${ Object.keys(val)
               .filter(name=> val.hasOwnProperty ? val.hasOwnProperty(name) : true)
-              .map(name => `${name}:${wrapRecursive(val[name],refs,name)}`)
+              .map(name => `${validatingPropertyName(name)?name:`'${name}'`
+                            }:${
+                              wrapRecursive(val[name],refs,name)}`)
               .join(", ") } }`
     }
     return `${val}`

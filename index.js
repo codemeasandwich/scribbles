@@ -113,11 +113,19 @@ function scribble(from, level, ...args){
      if("statusX" === level){
       const now = new Date();
       from = from || getSource(new Error().stack)
+      const body = {}
       status().then( statusinfo => {
         Object.assign(statusinfo.process,pValues)
-        scribble(from, "status", message, { statusinfo,value, now}, error)
+        const result = scribble(from, "status", message, { statusinfo, value, now}, error)
+        // THIS is a VERY ugly hack !!
+        // by returning the 'body' var we give the caller I reference synchronously.
+        // when the promise is finished we inject the result of values
+        // however there will be the stage for the receiver first gets it on it is empty
+        // and sometime in the near future it will be magically populated :/
+        Object.assign(body,result)
       })
-      return
+      // maybe.. I can sleep well at night knowing that this is an undocumented feature
+      return body
     }
 
     let originalMessage = notUsed !== error
@@ -458,7 +466,7 @@ scribbles.config = function scribblesConfig(opts){
       increment = b - a
       elapsed = timeAr[timeAr.length - 1] - timeAr[0]
     }
-    scribble.call({originalMessage:message},from,level,`${tag}${message?`:${message}`:""} (+${Math.round(increment)}ms|${Math.round(elapsed)}ms)`,{tag,elapsed,increment})
+    return scribble.call({originalMessage:message},from,level,`${tag}${message?`:${message}`:""} (+${Math.round(increment)}ms|${Math.round(elapsed)}ms)`,{tag,elapsed,increment})
   } // END timePrint
 
   scribbles.timer = (tag,message)=>{
@@ -466,7 +474,7 @@ scribbles.config = function scribblesConfig(opts){
     const t = times[tag] || []
     t.push(performance.now())
     times[tag] = t
-    timePrint(getSource(new Error().stack),"timer",tag,message)
+    return timePrint(getSource(new Error().stack),"timer",tag,message)
   } // END timeLog
 
   scribbles.timerEnd = (tag,message)=>{
@@ -475,8 +483,9 @@ scribbles.config = function scribblesConfig(opts){
         throw new Error(`Timer '${tag}' does not exist`)
       }
       times[tag].push(performance.now())
-      timePrint(getSource(new Error().stack),"timerEnd",tag,message)
+      const result = timePrint(getSource(new Error().stack),"timerEnd",tag,message)
       delete times[tag]
+      return result
   }// END timeEnd
 
 
