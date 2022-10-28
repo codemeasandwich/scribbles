@@ -65,6 +65,8 @@ There is a `config` that takes a configuration object.
   * Redirect the string output of the log entry
 * **dataOut**  [function]
   * A callback to receive an object representing the log entry
+* **stringify**  [function]
+  * A function used in stdOut to parsing for values into a string
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
 * **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*

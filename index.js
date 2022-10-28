@@ -196,10 +196,20 @@ function scribble(from, level, ...args){
         const time  = moment(body.time).format(config.time);
 
         const outputMessage    = all.message;
-        const outputValue      = notUsed === value || ["timer","timerEnd"].includes(level) ? ''
-                                                   : value === undefined ? 'undefined'
-                                                                         : 'function' === typeof value ? value.toString()
-                                                                                                       : stringify(value);
+
+        let outputValue;
+        if(notUsed === value
+        || ["timer","timerEnd"].includes(level)){
+          outputValue = ''
+        } else if ("function" === typeof config.stringify){
+          outputValue = config.stringify(value)
+        } else if(! value){
+          outputValue = value + ""
+        } else if ('function' === typeof value){
+          outputValue = value.toString()
+        } else {
+          outputValue = stringify(value)
+        }
 
         const outputStackTrace = notUsed !== error ? "\n"+( originalMessage ? "Error: "+originalMessage+"\n":"")+stackTrace.map(line => ` at ${line}`).join("\n") : "";
 
