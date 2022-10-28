@@ -2,8 +2,6 @@
 
 **scribbles** a log and tracing lib for Node [![npm version](https://badge.fury.io/js/scribbles.svg)](https://www.npmjs.com/package/scribbles)
 
- **scribbles** is 100% agnostic. **Connect your logging service of choice** to either: `stdOut` to get a string version of the entry OR `dataOut` to get an enriched object representing the log event
-
 ### If you like it, [★ it on github](https://github.com/codemeasandwich/scribbles), [![Buy me a coffee](https://img.shields.io/badge/buy%20me-a%20coffee-orange.svg)](https://www.buymeacoffee.com/codemeasandwich) and/or share :beers:
 
 ---
@@ -27,7 +25,8 @@
 * [Generate performance reports](#performance-monitoring)
   * Detailed metrics on service and host
   * Flag when the eventloop is blocking. This can happen when your app is over-loaded.
-
+  
+ **scribbles** is 100% agnostic. **Connect your logging service of choice** to either: `stdOut` to get a string version of the entry OR `dataOut` to get an enriched object representing the log event
 
 ## How to install
 
