@@ -476,13 +476,17 @@ scribbles.config = function scribblesConfig(opts){
       increment = b - a
       elapsed = timeAr[timeAr.length - 1] - timeAr[0]
     }
-    return scribble.call({originalMessage:message},from,level,`${tag}${message?`:${message}`:""} (+${Math.round(increment)}ms|${Math.round(elapsed)}ms)`,{tag,elapsed,increment})
+    return scribble.call({originalMessage:message},
+                          from,
+                          level,
+                          `${tag}${message?`:${message}`:""} (+${increment.toFixed(2)}ms|${elapsed.toFixed(2)}ms)`,
+                          {tag,elapsed,increment})
   } // END timePrint
 
   scribbles.timer = (tag,message)=>{
     tag = tag+""
     const t = times[tag] || []
-    t.push(performance.now())
+    t.push(Math.round(performance.now() * 100)/100)
     times[tag] = t
     return timePrint(getSource(new Error().stack),"timer",tag,message)
   } // END timeLog
