@@ -320,9 +320,9 @@ setTimeout(()=>{
 ```
 Output: You see the time it took to run the code
 ```cli
-2022-10-27T13:04:52.133 <timer> app.js:18 Yo (+0ms|0ms)  
-2022-10-27T13:04:52.557 <timer> app.js:20 Yo:123 (+419ms|419ms)  
-2022-10-27T13:04:52.869 <timerEnd> app.js:22 Yo:done! (+323ms|742ms)
+2022-10-27T13:04:52.133 <timer> app.js:18 Yo (+0.00ms|0.00ms)  
+2022-10-27T13:04:52.557 <timer> app.js:20 Yo:123 (+419.40ms|419.40ms)  
+2022-10-27T13:04:52.869 <timerEnd> app.js:22 Yo:done! (+323.21ms|742.61ms)
 ```
 
 ---
