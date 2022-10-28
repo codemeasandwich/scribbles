@@ -466,16 +466,6 @@ app.get('/', function (req, res){
 
 ---
 
-Todo:
-
-* Add tests
-* Allow for coloured logs
-* Support console.group
-* Allow custom json parser for `input values`
-* a proxy that sits at the edge of your infrastructure swapping header tracestate with a lookup hash.
-
----
-
 **small print:**
 
 **MIT** - If you use this module(or part), credit it in the readme of your project and failing to do so constitutes an irritating social faux pas. Besides this, do what you want with this code but don't blame me if it does not work.  If you find any problems with this module, [open issue on Github](https://github.com/codemeasandwich/scribbles/issues). However reading the Source Code is suggested for experience JavaScript and node engineer's and may be unsuitable for overly sensitive persons with low self-esteem or no sense of humour. Unless the word tnetennba has been used in it's correct context somewhere other than in this warning, it does not have any legal or grammatical use and may be ignored. No animals were harmed in the making of this module, although the yorkshire terrier next door is living on borrowed time, let me tell you. Those of you with an overwhelming fear of the unknown will be gratified to learn that there is no hidden message revealed by reading this warning backwards, I think.
