@@ -126,13 +126,11 @@ function scribble(from, level, ...args){
       })
       // maybe.. I can sleep well at night knowing that this is an undocumented feature
       return body
-    }
+    } // END if statusX
 
     let originalMessage = notUsed !== error
-                         && notUsed !== message ? error.message : undefined;
-
-//console.log({ message, originalMessage,value, error })
-
+                       && notUsed !== message ? error.message
+                                              : undefined;
     if(notUsed === message
     && notUsed !== error){
       message = error.message;
@@ -140,13 +138,14 @@ function scribble(from, level, ...args){
 
 
     let correlaterValue = myNamespace()
-
-    const { traceId, spanId, span64, tracestate, spanLabel } = correlaterValue('traceVals') || {};
+    const traceVals =  correlaterValue('traceVals') || {};
+    const { traceId, spanId, span64, tracestate, spanLabel, trigger, logs } = traceVals
 
     const stackTrace = notUsed !== error ? error.stack.split("\n")
                                       .slice(1)// if there is a custom message leave the original in the trace
                                       .filter( line => !!line) // some stacks may have an extra empty line
-                                      .map((line) => line.trim().indexOf("at") === 0 ? line.split(/at(.+)/)[1].trim() : line.trim() )
+                                      .map((line) => line.trim().indexOf("at") === 0 ? line.split(/at(.+)/)[1].trim()
+                                                                                     : line                   .trim() )
                            : undefined
 //console.log("============",stackTrace)
     from = from || getSource(new Error().stack)
@@ -170,7 +169,7 @@ function scribble(from, level, ...args){
         tracestate
       },
       info:{
-        time: now || new Date(),
+        time: new Date(),
         mode:config.mode,
         hostname,
         instance:cuidPrefix,
@@ -193,7 +192,7 @@ function scribble(from, level, ...args){
 
         const all = Object.keys(body).reduce((all,topics)=> Object.assign(all,body[topics]),{v:sVer})
 
-        const time  = moment(body.time).format(config.time);
+        const time  = moment(body.info.time).format(config.time);
 
         const outputMessage    = all.message;
 
@@ -222,21 +221,44 @@ function scribble(from, level, ...args){
       body.status = statusinfo
     }
 
-    if(config.stdOut){
-      let stdOut;
-      if(config.stdOut[body.level]){
-        stdOut = config.stdOut[body.level]
-      } else if('function' === typeof config.stdOut){
-        stdOut = config.stdOut
-      } else if('function' === typeof config.stdOut.log) {
-        stdOut = config.stdOut.log
-      } else {
-        throw new Error(`${body.level} was not found on stdOut`)
-      }
-      stdOut(body.toString())
-    } // END if config.stdOut
-    //const dataBody = Object.assign({},body,{time : moment(body.time).format(config.time)})
-    config.dataOut && config.dataOut(body);//(dataBody)
+     const output = (body)=>{
+
+           if(config.stdOut){
+             let stdOut;
+             if(config.stdOut[level]){
+               stdOut = config.stdOut[level]
+             } else if('function' === typeof config.stdOut){
+               stdOut = config.stdOut
+             } else if('function' === typeof config.stdOut.log) {
+               stdOut = config.stdOut.log
+             } else {
+               throw new Error(`${level} was not found on stdOut`)
+             }
+             stdOut(body.toString())
+           } // END if config.stdOut
+           //const dataBody = Object.assign({},body,{time : moment(body.time).format(config.time)})
+           config.dataOut && config.dataOut(body);//(dataBody)
+     }
+
+     // Am I inside a trace ?
+     if(traceId
+     && config.traceTrigger){
+       // if was HIT.. output this one
+       if(trigger){
+         output(body)
+         // if this is the HIT = push logs, push this one & clear
+       } else if(config.levels.indexOf(config.traceTrigger)
+              >= config.levels.indexOf(level) ){
+         traceVals.trigger = true;
+         logs.forEach(output)
+         output(body)
+         // if not HTI = store log
+       } else {
+         logs.push(body)
+       }
+     } else {
+       output(body)
+     }
 
     return body;
   }// END scribble
@@ -250,7 +272,7 @@ traceCount = 1;
 
 function trace(opts, next){
 
-  let traceVals = {};
+  let traceVals = { logs:[] };
 
   // TODO: maybe this can be changed to a switch
   if('object' === typeof opts){

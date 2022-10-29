@@ -25,7 +25,7 @@
 * [Generate performance reports](#performance-monitoring)
   * Detailed metrics on service and host
   * Flag when the eventloop is blocking. This can happen when your app is over-loaded.
-  
+
  **scribbles** is 100% agnostic. **Connect your logging service of choice** to either: `stdOut` to get a string version of the entry OR `dataOut` to get an enriched object representing the log event
 
 ## How to install
@@ -95,10 +95,13 @@ There is a `config` that takes a configuration object.
   * `v`: The version of scribbles used to create this entry. This allows matching log body with parsers. As the layout may change with new versions.
 * **time** [string] - *defaults: "YYYY-MM-DDTHH:mm:ss.SSS"*
   * [Time formatting is provided by Moment.js](https://momentjs.com/docs/#/displaying/format/)
+* **traceTrigger** [string] *
+  * Used within trace call.
+  * Log events will be stored and only push out if the scribbles[logLevel] >= the traceTrigger level
 * **logLevel** [string] - *defaults: "debug"*
   * Report on this level and higher
   * Can use LOG_LEVEL from environment variables
-* **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
+* **levels** [array] - *defaults: `["error", "warn", "status", "log", "timer", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
 * **headers** [string/array/null]
@@ -371,6 +374,33 @@ function workToDo(dataIn){
   // [eventstream 090e8e40000005] Doing something with the eventstream
   // ...
 }
+```
+
+### Filter Tracing logs to only when there is a problem.
+
+```
+scribbles.config({
+  traceTrigger:"error",
+  logLevel:'warning',
+  levels:['fatal','error','warning','info'],
+})
+
+
+scribbles.trace('in_trace',()=>{
+  scribbles.info(" --- Will NEVER be showen") // as this is below the logLevel
+  setTimeout(()=>{
+     // will be store, but will not be sent out at this point
+    scribbles.warning(" --- Wait")
+    setTimeout(()=>{
+      // traceTrigger exceded! store event will be sent out + this event
+      scribbles.fatal(" --- Now!")
+      setTimeout(()=>{
+        // will be sent out at the traceTrigger was already hit, for this *trace context*
+        scribbles.warning(" --- More!")
+      }, 500)
+    }, 500)
+  }, 500)
+})
 ```
 
 ### Tracing across your micro-services.
