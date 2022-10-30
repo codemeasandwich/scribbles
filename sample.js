@@ -38,6 +38,12 @@ scribbles.warn(undefined);
 scribbles.error(new Error("an err"));
 console.log();
 scribbles.config({
+  /* stash calls from logLevel(or all). If traceTrigger level or higher is hit.
+  Push out the logs + logs undel end on trace*/
+  
+  // --> maybe should also send a flag back in the header to tell the
+  //     calling service that the traceTrigger was been firied
+  traceTrigger:"error",
   logLevel:'warning',
   levels:['fatal','error','warning','info'],
   stdOut:null,
@@ -50,6 +56,18 @@ scribbles.config({
 //scribbles.warning("obj2json",{foo:'bar'});
 
 scribbles.status("Im async");
+scribbles.trace('in_trace',()=>{
+  scribbles.info(" --- Hide")
+  setTimeout(()=>{
+    scribbles.warning(" --- Wait")
+    setTimeout(()=>{
+      scribbles.fatal(" --- Now!")
+      setTimeout(()=>{
+        scribbles.warning(" --- More!")
+      }, 300)
+    }, 300)
+  }, 400)
+})
 
 scribbles.warning('SOURCE fn',foo);
 scribbles.warning(foo);
@@ -90,3 +108,11 @@ scribbles.log({
     y,
     z:NaN
 })
+
+scribbles.timer("Yo")
+setTimeout(()=>{
+  scribbles.timer("Yo","123")
+  setTimeout(()=>{
+    scribbles.timerEnd("Yo","done!")
+  }, 300)
+}, 400)

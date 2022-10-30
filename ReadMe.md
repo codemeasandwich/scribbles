@@ -322,9 +322,9 @@ setTimeout(()=>{
 ```
 Output: You see the time it took to run the code
 ```cli
-2022-10-27T13:04:52.133 <timer> app.js:18 Yo (+0.00ms|0.00ms)  
-2022-10-27T13:04:52.552 <timer> app.js:20 Yo:123 (+419.40ms|419.40ms)  
-2022-10-27T13:04:52.875 <timerEnd> app.js:22 Yo:done! (+323.21ms|742.61ms)
+myRepo:local:master [ ] 2022-06-27T13:04:52.133 <timer> app.js:18 Yo (+0.00ms|0.00ms)  
+myRepo:local:master [ ] 2022-06-27T13:04:52.552 <timer> app.js:20 Yo:123 (+419.40ms|419.40ms)  
+myRepo:local:master [ ] 2022-06-27T13:04:52.875 <timerEnd> app.js:22 Yo:done! (+323.21ms|742.61ms)
 ```
 
 ---
@@ -376,18 +376,25 @@ function workToDo(dataIn){
 }
 ```
 
-### Filter Tracing logs to only when there is a problem.
+### Filter Tracing logs to **only when there is a problem**.
 
-```
+Log just the timeline of events you care about.
+
+By setting a "traceTrigger" level. All scribbles calls **within** a trace context will respect it. If a call is make that matchs or exceds this level. Past, current & new events in this context will be outputted, else they will be suppressed
+
+```js
 scribbles.config({
+  // Any call to error or higher will trigger all logs from logLevel for this specific this execution context
   traceTrigger:"error",
+  // logLevel dont not have to be set. Will default to All
   logLevel:'warning',
+  // Levels do not need to be set this is only for demonstration purposes
   levels:['fatal','error','warning','info'],
 })
 
 
 scribbles.trace('in_trace',()=>{
-  scribbles.info(" --- Will NEVER be showen") // as this is below the logLevel
+  scribbles.info(" --- Will NEVER be shown") // as this is below the logLevel
   setTimeout(()=>{
      // will be store, but will not be sent out at this point
     scribbles.warning(" --- Wait")
@@ -401,6 +408,12 @@ scribbles.trace('in_trace',()=>{
     }, 500)
   }, 500)
 })
+
+/*
+  myRepo:local:master [in_trace 3b3c6000000001] 2022-06-27T09:22:52.588 #3d608bf <warning> app.js:14  --- Wait
+  myRepo:local:master [in_trace 3b3c6000000001] 2022-06-27T09:22:52.890 #3d608bf <fatal> app.js:16  --- Now!  
+  myRepo:local:master [in_trace 3b3c6000000001] 2022-06-27T09:22:53.199 #3d608bf <warning> app.js:18  --- More!
+*/
 ```
 
 ### Tracing across your micro-services.
