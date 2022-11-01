@@ -303,6 +303,23 @@ Via **package.js**
 
 ---
 
+## Using TypeScript in a bundle?
+
+To get accurate file & line references when transpiling your code. 
+You will need to enable inlining sourceMaps.
+There are two steps you need to add.
+
+1. **Generate source-map as part of the build**
+    * In your `tsconfig.json` add `"sourceMap": true` under "*compilerOptions*" 
+
+2. **Enable sourceMap support in Node**
+    * **Node v12.12+** : can just add the ` --enable-source-maps ` flag to the node command
+      
+      OR
+    * **Node older** : Will need to install **[NPM->source-map-support](https://www.npmjs.com/package/source-map-support)** and add `require('source-map-support').install()` to the top for you service
+
+---
+
 ## How to analyzing performance of pieces of your code
 
 You can start a timer to calculate the duration of a specific operation. To start one, call the `scribbles.timer(tag,[message])` function, giving it a name and an optional message. To stop the timer, just call the `scribbles.timerEnd(tag,[message])` function, again passing the timer's name as the first parameter.
