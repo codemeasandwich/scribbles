@@ -32,6 +32,9 @@ if(fs.existsSync(__dirname+'/../../package.json')){
 
 const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
+const {
+  performance
+} = require('perf_hooks');
 
 //config.defaultVendor = gitValues.repo.toLocaleLowerCase().replace(/[^a-z]/gi, '')
 
@@ -201,13 +204,17 @@ function scribble(from, level, ...args){
         || ["timer","timerEnd"].includes(level)){
           outputValue = ''
         } else if ("function" === typeof config.stringify){
-          outputValue = config.stringify(value)
+          outputValue = config.stringify(value,config.pretty)
         } else if(! value){
           outputValue = value + ""
         } else if ('function' === typeof value){
           outputValue = value.toString()
+        } else if ('object' === typeof value || Array.isArray(value)){
+          outputValue = stringify(value,config.pretty)
+        }else if (value instanceof Date && !isNaN(val)) {
+          outputValue = `Date(${value.toJSON()})`
         } else {
-          outputValue = stringify(value)
+          outputValue = `${value}`
         }
 
         const outputStackTrace = notUsed !== error ? "\n"+( originalMessage ? "Error: "+originalMessage+"\n":"")+stackTrace.map(line => ` at ${line}`).join("\n") : "";
@@ -415,7 +422,7 @@ scribbles.trace.headers = function traceContext(customHeader){
 } // END traceContext
 
 
-scribbles.config = function scribblesConfig(opts){
+scribbles.config = function scribblesConfig(opts = {}){
 
   if(opts && opts.levels){
     opts.levels.forEach((logLevel) => {
@@ -434,9 +441,33 @@ scribbles.config = function scribblesConfig(opts){
 
 //++++++++++++++++++++++++++++++++++ overwrite options
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+  
+  const defaultPretty = config.pretty = config.pretty || {}
+  
   Object.assign(config,opts);
+  Object.assign(config.pretty,defaultPretty,opts.pretty || {});
 
+//+++++++++++++++++++++++++++++++++++++++ setup pretty
+//++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  config.pretty = config.pretty || {}
+  
+  if (undefined === config.pretty.inlineCharacterLimit) {
+    if ("dev" === config.mode.toLowerCase()) {
+      config.pretty.inlineCharacterLimit = 80
+      if (undefined === config.pretty.indent) {
+        config.pretty.indent = "  "
+      }
+    } else {
+      config.pretty.inlineCharacterLimit = Number.POSITIVE_INFINITY
+    }
+  }
+  
+  if (undefined === config.pretty.singleQuotes) {
+    config.pretty.singleQuotes = false
+  }
+  
+  
 //+++++++++++++++++++++++++++++++++++++ setup git Info
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 

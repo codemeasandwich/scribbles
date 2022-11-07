@@ -1,5 +1,18 @@
-function validatingPropertyName(name){
-  return /^(?!\d)[\w$]+$/.test(name)
+
+
+function getOwnEnumPropSymbols (object) {
+	return Object
+    .getOwnPropertySymbols(object)
+    .filter((keySymbol) => Object.prototype.propertyIsEnumerable.call(object, keySymbol));
+}
+
+function isRegexp(value) {
+	return toString.call(value) === '[object RegExp]';
+}
+
+function isObject(value) {
+	const type = typeof value;
+	return value !== null && (type === 'object' || type === 'function');
 }
 
 function getObjName(val){
@@ -10,76 +23,168 @@ function getObjName(val){
   return ""
 } // END getObjName
 
-function stringify(val,refs = [],name=""){
-      if (val instanceof Date && !isNaN(val)) {
-        return `Date(${val.toJSON()})`
-    }
-    if("symbol" === typeof val){
-        return val.toString()
-    }
-    if("function" === typeof val){
+module.exports = function stringify(input, options, pad) {
+	const seen = [];
+//console.log(input)
+	return (function stringify(input, options = {}, pad = '',name="") {
+		const indent = options.indent || '\t';
 
-      const [start]   = val.toString().split(")");
-      const isArrow   = ! start.includes("function")
-      const [nameA,argsB] = start.replace("function",'')
-                               .replace(/ /g,'')
-                               .split("(")
-        let realName = name
+		let tokens;
+		if (options.inlineCharacterLimit === undefined) {
+			tokens = {
+				newline: '\n',
+				newlineOrSpace: '\n',
+				pad,
+				indent: pad + indent,
+			};
+		} else {
+			tokens = {
+				newline: '@@__STRINGIFY_OBJECT_NEW_LINE__@@',
+				newlineOrSpace: '@@__STRINGIFY_OBJECT_NEW_LINE_OR_SPACE__@@',
+				pad: '@@__STRINGIFY_OBJECT_PAD__@@',
+				indent: '@@__STRINGIFY_OBJECT_INDENT__@@',
+			};
+		}
 
-        if(isArrow){
-          if(name !=val.name)
-            realName = val.name
-          else
-            realName = ""
-        } else {
-          if(name === val.name)
-            realName = "ƒ"
-          else
-            realName = val.name
-        }
+		const expandWhiteSpace = string => {
+			if (options.inlineCharacterLimit === undefined) {
+				return string;
+			}
 
-        return `${realName}(${argsB})${
-          isArrow?"=>":""
-        }{-}`
-    }
-    if ("string" === typeof val) {
-        return `”${val}”`
-    }
-    if (val instanceof Error) {
-        return `${val.name}("${val.message}")`
-    }
-    if(Array.isArray(val)){
-        return `[ ${val.map(v=>wrapRecursive(v,refs)).join(", ")} ]`
-    }
-    if(val && "object" === typeof val){
+			const oneLined = string
+				.replace(new RegExp(tokens.newline, 'g'), '')
+				.replace(new RegExp(tokens.newlineOrSpace, 'g'), ' ')
+				.replace(new RegExp(tokens.pad + '|' + tokens.indent, 'g'), '');
 
-        return `${getObjName(val)}{ ${ Object.keys(val)
-              .filter(name=> val.hasOwnProperty ? val.hasOwnProperty(name) : true)
-              .map(name => `${validatingPropertyName(name)?name:`'${name}'`
-                            }:${
-                              wrapRecursive(val[name],refs,name)}`)
-              .join(", ") } }`
-    }
-    return `${val}`
-} // END stringify
+			if (oneLined.length <= options.inlineCharacterLimit) {
+				return oneLined;
+			}
 
-function wrapRecursive(val,refs,name){
+			return string
+				.replace(new RegExp(tokens.newline + '|' + tokens.newlineOrSpace, 'g'), '\n')
+				.replace(new RegExp(tokens.pad, 'g'), pad)
+				.replace(new RegExp(tokens.indent, 'g'), pad + indent);
+		};
 
-  if(refs.includes(val)){
-    if(Array.isArray(val)){
-      return `[ ...! ]`
-    } else {
-      return `{ ...${getObjName(val)||"!"} }`
-    }
-  } // END refs.includes
+		if (seen.includes(input)) {
+			if (Array.isArray(input)) {
+                return '[ ...! ]';
+            }
+			return `{ ...${getObjName(input)||"!"} }`;
+		}
 
-  if(Array.isArray(val) && val.length){
-    refs = refs.concat([val])
-  }else if(val && "object" === typeof val){
-    refs = refs.concat(val)
-  }
+		if (
+			input === null
+			|| input === undefined
+			|| typeof input === 'number'
+			|| typeof input === 'boolean'
+		//	|| typeof input === 'function'
+			|| typeof input === 'symbol'
+			|| isRegexp(input)
+		) {
+			return String(input);
+		}
+		if("function" === typeof input){
+			const [start]   = input.toString().split(")");
+			const isArrow   = ! start.includes("function")
+			const [nameA,argsB] = start.replace("function",'')
+									 .replace(/ /g,'')
+									 .split("(")
+						 
+			  let realName = name
+	  
+			  if(isArrow){
+				if(realName !=input.name)
+				  realName = input.name
+				else
+				  realName = ""
+			  } else {
+				if(realName === input.name)
+				  realName = "ƒ"
+				else
+				  realName = input.name
+			  }
+	  
+			  return `${realName}(${argsB})${
+				isArrow?"=>":""
+			  }{-}`
+		  }
+		if (input instanceof Error) {
+			return `${input.name}("${input.message}")`
+		}
+		if (input instanceof Date) {
+			return `Date(${input.toJSON()})`;
+		}
 
-  return stringify(val,refs,name)
-} // END wrapRecursive
+		if (Array.isArray(input)) {
+			if (input.length === 0) {
+				return '[ ]';
+			}
 
-module.exports = stringify
+			seen.push(input);
+//console.log('"'+tokens.pad+'"')
+			const returnValue = '[ ' + tokens.newline + input.map((element, i) => {
+				const eol = input.length - 1 === i ?       tokens.newline
+												   : ',' + tokens.newlineOrSpace;
+
+				let value = stringify(element, options, pad + indent);
+				if (options.transform) {
+					value = options.transform(input, i, value);
+				}
+
+				return tokens.indent + value + eol;
+			}).join('') + tokens.pad + (tokens.pad.includes(" ") ? "" : " ") +']';
+
+			seen.pop();
+
+			return expandWhiteSpace(returnValue);
+		}
+
+		if (isObject(input)) {
+			let objectKeys = [
+				...Object.keys(input),
+				...getOwnEnumPropSymbols(input),
+			];
+
+			if (options.filter) {
+				// eslint-disable-next-line unicorn/no-array-callback-reference, unicorn/no-array-method-this-argument
+				objectKeys = objectKeys.filter(element => options.filter(input, element));
+			}
+
+			if (objectKeys.length === 0) {
+				return '{ }';
+			}
+
+			seen.push(input);
+
+			const returnValue = '{ ' + tokens.newline + objectKeys.map((element, i) => {
+				const eol = objectKeys.length - 1 === i ? tokens.newline : ',' + tokens.newlineOrSpace;
+				const isSymbol = typeof element === 'symbol';
+				const isClassic = !isSymbol && /^[a-z$_][$\w]*$/i.test(element);
+				const key = isSymbol || isClassic ? element : stringify(element, options);
+				
+				let value = stringify(input[element], options, pad + indent,key);
+				if (options.transform) {
+					value = options.transform(input, element, value);
+				}
+
+				return tokens.indent + String(key) + ':' + value + eol;
+			}).join('') + tokens.pad + (tokens.pad.includes(" ") ? "" : " ") +'}';
+
+			seen.pop();
+
+			return expandWhiteSpace(returnValue);
+		}
+
+		input = input.replace(/\\/g, '\\\\');
+		input = String(input).replace(/[\r\n]/g, x => x === '\n' ? '\\n' : '\\r');
+
+		if (options.singleQuotes === false) {
+			input = input.replace(/"/g, '\\"');
+			return `"${input}"`;
+		}
+
+		input = input.replace(/'/g, '\\\'');
+		return `'${input}'`;
+	})(input, options, pad);
+}

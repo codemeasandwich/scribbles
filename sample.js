@@ -23,6 +23,7 @@ scribbles.error('HelloWorld');
 console.log();
 scribbles.debug('HelloNull',null);
 scribbles.info( 'HelloNumber',123);
+scribbles.info( 'HelloNumber',new Date);
 scribbles.log(  'HelloObject',{foo:'bar'});
 scribbles.warn( 'HelloUndefined',undefined);
 scribbles.error(new Error("an err1"));
@@ -37,9 +38,9 @@ scribbles.warn();
 scribbles.warn(undefined);
 scribbles.error(new Error("an err"));
 console.log();
+  setTimeout(()=>{
 scribbles.config({
-  /* stash calls from logLevel(or all). If traceTrigger level or higher is hit.
-  Push out the logs + logs undel end on trace*/
+  // stash calls from logLevel(or all). If traceTrigger level or higher is hit. Push out the logs + logs undel end on trace
   
   // --> maybe should also send a flag back in the header to tell the
   //     calling service that the traceTrigger was been firied
@@ -77,7 +78,8 @@ scribbles.trace('in_trace',()=>{
   scribbles.error('false',false);
   scribbles.fatal('null',null);
 })
-
+},2000)
+  
 function foo(){
   return "abc"
 }
@@ -90,10 +92,14 @@ a.push(a)
 var y = {s:6}
 a.push(y)
 y.y = y
-scribbles.log({
+const data = {
   a,
+  aa:["s",6],
+  aaa:[["s",6]],
+  aaas:[[["s",6]]],
   b:null,
   b2:b,
+  "b-3":["{","}"],
   c:",",
     err:new Error("qwe"),
   d:undefined,
@@ -103,11 +109,11 @@ scribbles.log({
   f3:function doog(e,f){},
   g:Symbol("s"),
   a1:a,
-  g:global,
+ // g:global,
     x:new Date(),
     y,
     z:NaN
-})
+}
 
 scribbles.timer("Yo")
 setTimeout(()=>{
@@ -116,3 +122,13 @@ setTimeout(()=>{
     scribbles.timerEnd("Yo","done!")
   }, 300)
 }, 400)
+
+
+//const stringify = require('./src/stringify_')
+//const stringify2 = require('./src/stringify')
+console.log(scribbles.log(data))/*
+console.log(stringify2(false,{
+  inlineCharacterLimit:Number.POSITIVE_INFINITY,
+indent:"  ",
+singleQuotes:false
+  }))*/

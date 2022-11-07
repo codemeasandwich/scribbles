@@ -31,7 +31,7 @@
 
 ## How to install
 
-You should be running **node v8.3.0+**
+You should be running **node v8.5.0+**
 
 ```
 npm install --save scribbles
@@ -118,7 +118,12 @@ There is a `config` that takes a configuration object.
   * `hash`: attribute name of git short hash
   * `repo`: attribute name of git repository name
   * `branch`: attribute name of git branch
-
+* **pretty** [Object]
+  * `indent`[string]: preferred indentation. _Defaults  `"  "` ~ 2 spaces_
+  * `singleQuotes`[string]: Set to true to get single-quoted strings. _Default: `false`_
+  * `filter`(object, key) [function]: Expected to return a boolean of whether to include the property in the output.
+  * `transform`(object, key, val) [function]: Expected to return a string that transforms the string that resulted from stringifying a given property. 
+    * This can be used to detect special types of objects that need to be stringified in a particular way, or to return an alternate string in this case. e.g. given a field named "password" return "****"
 ---
 
 ### Example:
