@@ -28,7 +28,7 @@ module.exports = function stringify(input, options, pad) {
 //console.log(input)
 	return (function stringify(input, options = {}, pad = '',name="") {
 		const indent = options.indent || '\t';
-
+    		const currentDepth = options.depth ? pad.split(indent).length : null
 		let tokens;
 		if (options.inlineCharacterLimit === undefined) {
 			tokens = {
@@ -120,7 +120,9 @@ module.exports = function stringify(input, options, pad) {
 			if (input.length === 0) {
 				return '[ ]';
 			}
-
+		    if(currentDepth > options.depth){
+			return '[ + ]';
+		      }
 			seen.push(input);
 //console.log('"'+tokens.pad+'"')
 			const returnValue = '[ ' + tokens.newline + input.map((element, i) => {
@@ -154,7 +156,9 @@ module.exports = function stringify(input, options, pad) {
 			if (objectKeys.length === 0) {
 				return '{ }';
 			}
-
+			   if(currentDepth > options.depth){
+				return '{ + }';
+			      }
 			seen.push(input);
 
 			const returnValue = '{ ' + tokens.newline + objectKeys.map((element, i) => {
