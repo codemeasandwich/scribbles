@@ -121,6 +121,7 @@ There is a `config` that takes a configuration object.
 * **pretty** [Object]
   * `inlineCharacterLimit`[number]: Will inline values up to this length. ~ In Dev Mode it defaults to `80`
   * `indent`[string]: preferred indentation. _Defaults  `"  "` ~ 2 spaces_
+  * `depth`[number]: This represents how many nested steps in the object/array tree are to be walked
   * `singleQuotes`[string]: Set to true to get single-quoted strings. _Default: `false`_
   * `filter`(object, key) [function]: Expected to return a boolean of whether to include the property in the output.
   * `transform`(object, key, val) [function]: Expected to return a string that transforms the string that resulted from stringifying a given property. 
