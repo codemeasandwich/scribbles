@@ -123,10 +123,10 @@ module.exports = function stringify(input, options, pad) {
 			input = Array.from(input.values())
 		      }
 			if (input.length === 0) {
-				return '[ ]';
+				return typeOfObj+'[ ]';
 			}
 		    if(currentDepth > options.depth){
-			return '[ + ]';
+			return typeOfObj+'[ + ]';
 		      }
 			seen.push(input);
 
@@ -167,10 +167,10 @@ module.exports = function stringify(input, options, pad) {
 			}
 
 			if (objectKeys.length === 0) {
-				return '{ }';
+				return typeOfObj+'{ }';
 			}
 			   if(currentDepth > options.depth){
-				return '{ + }';
+				return typeOfObj+'{ + }';
 			      }
 			seen.push(input);
 
