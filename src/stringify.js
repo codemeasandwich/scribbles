@@ -116,7 +116,12 @@ module.exports = function stringify(input, options, pad) {
 			return `Date(${input.toJSON()})`;
 		}
 
-		if (Array.isArray(input)) {
+		if (Array.isArray(input) || input instanceof Set) {
+		      let typeOfObj = ""
+		      if(input instanceof Set){
+			typeOfObj = "Set"
+			input = Array.from(input.values())
+		      }
 			if (input.length === 0) {
 				return '[ ]';
 			}
@@ -124,8 +129,8 @@ module.exports = function stringify(input, options, pad) {
 			return '[ + ]';
 		      }
 			seen.push(input);
-//console.log('"'+tokens.pad+'"')
-			const returnValue = '[ ' + tokens.newline + input.map((element, i) => {
+
+			const returnValue = `${typeOfObj}[ ` + tokens.newline + input.map((element, i) => {
 				const eol = input.length - 1 === i ?       tokens.newline
 												   : ',' + tokens.newlineOrSpace;
 
@@ -143,10 +148,18 @@ module.exports = function stringify(input, options, pad) {
 		}
 
 		if (isObject(input)) {
-			let objectKeys = [
-				...Object.keys(input),
-				...getOwnEnumPropSymbols(input),
-			];
+			let objectKeys = [], getVal = (key)=>input[key], typeOfObj = ""
+		      if(input instanceof Map){
+			getVal = (key)=>input.get(key)
+			objectKeys = Array.from(input.keys())
+			typeOfObj = "Map"
+		      } else {
+			//typeOfObj = getObjName(input)
+			objectKeys = [
+			 ...Object.keys(input),
+			 ...getOwnEnumPropSymbols(input),
+		       ];
+		      }
 
 			if (options.filter) {
 				// eslint-disable-next-line unicorn/no-array-callback-reference, unicorn/no-array-method-this-argument
@@ -161,13 +174,13 @@ module.exports = function stringify(input, options, pad) {
 			      }
 			seen.push(input);
 
-			const returnValue = '{ ' + tokens.newline + objectKeys.map((element, i) => {
+			const returnValue = `${typeOfObj}{ ` + tokens.newline + objectKeys.map((element, i) => {
 				const eol = objectKeys.length - 1 === i ? tokens.newline : ',' + tokens.newlineOrSpace;
 				const isSymbol = typeof element === 'symbol';
 				const isClassic = !isSymbol && /^[a-z$_][$\w]*$/i.test(element);
 				const key = isSymbol || isClassic ? element : stringify(element, options);
 				
-				let value = stringify(input[element], options, pad + indent,key);
+				let value = stringify(getVal(element), options, pad + indent,key);
 				if (options.transform) {
 					value = options.transform(input, element, value);
 				}
