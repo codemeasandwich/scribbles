@@ -115,7 +115,9 @@ module.exports = function stringify(input, options, pad) {
 		if (input instanceof Date) {
 			return `Date(${input.toJSON()})`;
 		}
-
+		if( Buffer.isBuffer(input)){
+			return `Buffer[ ${Array.from(input).join()} ]`;
+		}
 		if (Array.isArray(input) || input instanceof Set) {
 		      let typeOfObj = ""
 		      if(input instanceof Set){
