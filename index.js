@@ -338,7 +338,7 @@ scribbles.middleware = {
 
   // if the request is part of a larger sequence
   // pull the traceparent from the header
-  express:function correlateMiddleware({headers}, res, next){
+  express:function correlateMiddleware({headers, socket, connection, ip}, res, next){
 
     let headersOut = {}
     if(config.headers){
@@ -388,14 +388,34 @@ scribbles.middleware = {
           }
         }) // END forEach
     }//END config.headersMapping
-
+    let spanLabel = headers['x-forwarded-for']
+    if(! spanLabel 
+    &&   socket 
+    &&   socket.remoteAddress){
+      spanLabel = socket.remoteAddress
+    }
+    
+    if(! spanLabel 
+    &&   connection){
+      if(connection.remoteAddress){
+        spanLabel = connection.remoteAddress
+      }else if(connection.socket 
+            && connection.socket.remoteAddress){
+        spanLabel = connection.socket.remoteAddress
+      }
+    }
+    
+    if(! spanLabel && ip){
+      spanLabel = ip
+    }
+    
     scribbles.trace({
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],
       tracestate:headers.tracestate,
       headers:headersOut,
       // lets tag the current trace/span with the caller's IP
-      spanLabel:headers['x-forwarded-for']
+      spanLabel
     },(spanId) => next())
   } // END express
 } // END scribbles.middleware
