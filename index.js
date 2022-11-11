@@ -474,7 +474,7 @@ scribbles.config = function scribblesConfig(opts = {}){
   
   if (undefined === config.pretty.inlineCharacterLimit) {
     if ("dev" === config.mode.toLowerCase()) {
-      config.pretty.inlineCharacterLimit = 80
+        config.pretty.inlineCharacterLimit = process.stdout && process.stdout.columns || 80
       if (undefined === config.pretty.indent) {
         config.pretty.indent = "  "
       }

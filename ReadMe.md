@@ -119,7 +119,7 @@ There is a `config` that takes a configuration object.
   * `repo`: attribute name of git repository name
   * `branch`: attribute name of git branch
 * **pretty** [Object]
-  * `inlineCharacterLimit`[number]: Will inline values up to this length. ~ In Dev Mode it defaults to `80`
+  * `inlineCharacterLimit`[number]: Will inline values up to this length. ~ In Dev Mode, this will be set to the width of your terminal **or** _default to_ `80`
   * `indent`[string]: preferred indentation. _Defaults  `"  "` ~ 2 spaces_
   * `depth`[number]: This represents how many nested steps in the object/array tree are to be walked
   * `singleQuotes`[string]: Set to true to get single-quoted strings. _Default: `false`_
