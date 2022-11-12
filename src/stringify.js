@@ -46,7 +46,7 @@ module.exports = function stringify(input, options, pad) {
 			};
 		}
 
-		const expandWhiteSpace = string => {
+		const expandWhiteSpace = (string, reGenArrayWithIndexs) => {
 			if (options.inlineCharacterLimit === undefined) {
 				return string;
 			}
@@ -60,11 +60,11 @@ module.exports = function stringify(input, options, pad) {
 				return oneLined;
 			}
 
-			return string
+			return (reGenArrayWithIndexs ? reGenArrayWithIndexs() : string)
 				.replace(new RegExp(tokens.newline + '|' + tokens.newlineOrSpace, 'g'), '\n')
 				.replace(new RegExp(tokens.pad, 'g'), pad)
 				.replace(new RegExp(tokens.indent, 'g'), pad + indent);
-		};
+		}; // END expandWhiteSpace
 
 		if (seen.includes(input)) {
 			if (Array.isArray(input)) {
@@ -90,9 +90,9 @@ module.exports = function stringify(input, options, pad) {
 			const [nameA,argsB] = start.replace("function",'')
 									 .replace(/ /g,'')
 									 .split("(")
-						 
+
 			  let realName = name
-	  
+
 			  if(isArrow){
 				if(realName !=input.name)
 				  realName = input.name
@@ -104,7 +104,7 @@ module.exports = function stringify(input, options, pad) {
 				else
 				  realName = input.name
 			  }
-	  
+
 			  return `${realName}(${argsB})${
 				isArrow?"=>":""
 			  }{-}`
@@ -118,12 +118,16 @@ module.exports = function stringify(input, options, pad) {
 		if( Buffer.isBuffer(input)){
 			return `Buffer[ ${Array.from(input).join()} ]`;
 		}
-		if (Array.isArray(input) || input instanceof Set) {
-		      let typeOfObj = ""
-		      if(input instanceof Set){
-			typeOfObj = "Set"
-			input = Array.from(input.values())
-		      }
+
+		if (Array.isArray(input)
+		|| input instanceof Set) {
+
+      let typeOfObj = ""
+      if(input instanceof Set){
+				typeOfObj = "Set"
+				input = Array.from(input.values())
+      }
+
 			if (input.length === 0) {
 				return typeOfObj+'[ ]';
 			}
@@ -132,21 +136,24 @@ module.exports = function stringify(input, options, pad) {
 		      }
 			seen.push(input);
 
-			const returnValue = `${typeOfObj}[ ` + tokens.newline + input.map((element, i) => {
-				const eol = input.length - 1 === i ?       tokens.newline
-												   : ',' + tokens.newlineOrSpace;
+			const doWork = (addIndexs)=>{
+				return `${typeOfObj}[ ` + tokens.newline + input.map((element, i) => {
+					const eol = input.length - 1 === i ?       tokens.newline
+													   : ',' + tokens.newlineOrSpace;
 
-				let value = stringify(element, options, pad + indent);
-				if (options.transform) {
-					value = options.transform(input, i, value);
-				}
+					let value = stringify(element, options, pad + indent);
+					if (options.transform) {
+						value = options.transform(input, i, value);
+					}
 
-				return tokens.indent + value + eol;
-			}).join('') + tokens.pad + (tokens.pad.includes(" ") ? "" : " ") +']';
+					return tokens.indent + (addIndexs ? i+":" : "")+value + eol;
+				}).join('') + tokens.pad + (tokens.pad.includes(" ") ? "" : " ") +']';
+			}
 
+			const returnValue = doWork()
 			seen.pop();
 
-			return expandWhiteSpace(returnValue);
+			return expandWhiteSpace(returnValue,()=>doWork(true));
 		}
 
 		if (isObject(input)) {
@@ -181,7 +188,7 @@ module.exports = function stringify(input, options, pad) {
 				const isSymbol = typeof element === 'symbol';
 				const isClassic = !isSymbol && /^[a-z$_][$\w]*$/i.test(element);
 				const key = isSymbol || isClassic ? element : stringify(element, options);
-				
+
 				let value = stringify(getVal(element), options, pad + indent,key);
 				if (options.transform) {
 					value = options.transform(input, element, value);
