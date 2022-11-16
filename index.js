@@ -11,7 +11,7 @@ const cls = require('@ashleyw/cls-hooked');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 
 const status = require('./src/status');
-//const loader = require('./src/loader');
+const loader = require('./src/loader');
 const hijacker = require('./src/hijacker');
 const config = require('./src/config');
 const args2keys = require('./src/args2keys');
@@ -20,6 +20,10 @@ const { parceTracestate } = require('./src/utils');
 const stringify = require('./src/stringify');
 
 const gitValues = require('./src/getGitStatus');
+
+
+
+
 
 let packageJson_scribbles = {}
 
@@ -99,8 +103,50 @@ function myNamespace(){
 
 const notUsed = {not:'used'}
 
+
+function parceStringVals(fragments,...vals){
+  //console.log(fragments,vals)
+  const temp = fragments.join("")
+  // ({}) [1,2,3] afs()
+/*  if( ! ['{', '[', '('].some(x=>temp.includes(x))){
+    return temp
+  }*/
+
+  return fragments.map((txt,index)=>{
+    if(index >= vals.length){
+      return txt
+    }
+    let input = vals[index]
+    if("function" === typeof input){
+      input = `:ƒ(){..}`
+    } else if (input instanceof Error) {
+      input = `:${input.name}-Error()`
+    } else if (input instanceof Date) {
+      input = `:Date(${input.toJSON()})`;
+    } else if( Buffer.isBuffer(input)){
+      input = `:Buffer[..]`;
+    } else if(input instanceof Map){
+      input = `:Map{..}`;
+   } else if(input instanceof Set){
+     input = `:Set[..]`;
+   } else if (Array.isArray(input)){
+     input = `:[..]`;
+   } else if (input !== null && 'object' === typeof input) {
+     input = `:{..}`;
+   /*} else{
+     input = ""
+   }*/} else if("string" === typeof input){
+     input = `:"${input}"`
+   } else {
+     input = ":"+String(input)
+   }
+    return txt+input
+  }).join("")
+}// END parceStringVals
+
 function scribble(from, level, ...args){
 
+    const argNames = from.args.map(a=>a ? a(parceStringVals) : "")
 
     let statusinfo, now;
     if("status" === level){
@@ -111,8 +157,23 @@ function scribble(from, level, ...args){
       args[1] = vals.value;
     }
 
-    let { message, value, error } = args2keys(args, notUsed);
+    let { message, value, error, indexs } = args2keys(args, notUsed);
 
+/*
+if(1 === args.length
+  && ("{" === message[0]
+  ||  "[" === message[0])){
+    message = `String" ${message} "`
+  } else if("string" === typeof message
+         && "string" === typeof value
+         && ("{" === value
+         ||  "[" === value)){
+    value = `String" ${value} "`
+  }
+*/
+
+  //  console.log(argNames,{ message, value, error, indexs })
+    const argValName = argNames[indexs.indexOf("value")] || ""
      if("statusX" === level){
       const now = new Date();
       from = from || getSource(new Error().stack)
@@ -197,9 +258,19 @@ function scribble(from, level, ...args){
 
         const time  = moment(body.info.time).format(config.time);
 
-        const outputMessage    = all.message;
+        let outputMessage    = all.message;
 
-        let outputValue;
+        if("string" === typeof outputMessage
+        && ["{","["].includes(outputMessage.trim()[0])){
+          outputMessage = `String"${outputMessage}"`
+        }
+        if(-1 === indexs.indexOf("value")
+        &&  0 === indexs.indexOf("message")
+        && argNames[0]){
+          outputMessage = argNames[0]+":"+outputMessage
+        }
+        //console.log(value)
+        let outputValue = value;
         if(notUsed === value
         || ["timer","timerEnd"].includes(level)){
           outputValue = ''
@@ -213,14 +284,22 @@ function scribble(from, level, ...args){
           outputValue = stringify(value,config.pretty)
         }else if (value instanceof Date && !isNaN(val)) {
           outputValue = `Date(${value.toJSON()})`
-        } else {
-          outputValue = `${value}`
+        } else if("string" === typeof value){
+          if(["{","["].includes(value.trim()[0]))
+          outputValue = `String"${value}"`
         }
-
-        const outputStackTrace = notUsed !== error ? "\n"+( originalMessage ? "Error: "+originalMessage+"\n":"")+stackTrace.map(line => ` at ${line}`).join("\n") : "";
+        outputValue = (argValName?argValName+":":"")+outputValue
+        const outputStackTrace = notUsed !== error ? "\n"+( originalMessage
+                                                   ? "Error: "+originalMessage+"\n"
+                                                   : "")+stackTrace.map(line => ` at ${line}`).join("\n")
+                                                   : "";
 
         // based on: https://www.npmjs.com/package/tracer
-        return config.__compile(Object.assign(all,{time,value:outputValue,message:outputMessage,stackTrace:outputStackTrace}))
+        return config.__compile(Object.assign(all,{ time,
+                                                    value:outputValue,
+                                                    message:outputMessage,
+                                                    stackTrace:outputStackTrace
+                                                  }))
       }
     } // END body
 
@@ -338,7 +417,7 @@ scribbles.middleware = {
 
   // if the request is part of a larger sequence
   // pull the traceparent from the header
-  express:function correlateMiddleware({headers, socket, connection, ip}, res, next){
+  express:function correlateMiddleware({headers}, res, next){
 
     let headersOut = {}
     if(config.headers){
@@ -389,26 +468,25 @@ scribbles.middleware = {
         }) // END forEach
     }//END config.headersMapping
     let spanLabel = headers['x-forwarded-for']
-    if(! spanLabel 
-    &&   socket 
+    if(! spanLabel
+    &&   socket
     &&   socket.remoteAddress){
       spanLabel = socket.remoteAddress
     }
-    
-    if(! spanLabel 
+
+    if(! spanLabel
     &&   connection){
       if(connection.remoteAddress){
         spanLabel = connection.remoteAddress
-      }else if(connection.socket 
+      }else if(connection.socket
             && connection.socket.remoteAddress){
         spanLabel = connection.socket.remoteAddress
       }
     }
-    
+
     if(! spanLabel && ip){
       spanLabel = ip
     }
-    
     scribbles.trace({
       // this traceId is embedded within the traceparent
       traceId:headers.traceparent && headers.traceparent.split('-')[1],
@@ -461,9 +539,9 @@ scribbles.config = function scribblesConfig(opts = {}){
 
 //++++++++++++++++++++++++++++++++++ overwrite options
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
-  
+
   const defaultPretty = config.pretty = config.pretty || {}
-  
+
   Object.assign(config,opts);
   Object.assign(config.pretty,defaultPretty,opts.pretty || {});
 
@@ -471,10 +549,10 @@ scribbles.config = function scribblesConfig(opts = {}){
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   config.pretty = config.pretty || {}
-  
+
   if (undefined === config.pretty.inlineCharacterLimit) {
     if ("dev" === config.mode.toLowerCase()) {
-        config.pretty.inlineCharacterLimit = process.stdout && process.stdout.columns || 80
+      config.pretty.inlineCharacterLimit = process.stdout && process.stdout.columns || 80
       if (undefined === config.pretty.indent) {
         config.pretty.indent = "  "
       }
@@ -482,12 +560,12 @@ scribbles.config = function scribblesConfig(opts = {}){
       config.pretty.inlineCharacterLimit = Number.POSITIVE_INFINITY
     }
   }
-  
+
   if (undefined === config.pretty.singleQuotes) {
     config.pretty.singleQuotes = false
   }
-  
-  
+
+
 //+++++++++++++++++++++++++++++++++++++ setup git Info
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 

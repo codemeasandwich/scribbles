@@ -124,7 +124,7 @@ There is a `config` that takes a configuration object.
   * `depth`[number]: This represents how many nested steps in the object/array tree are to be walked
   * `singleQuotes`[string]: Set to true to get single-quoted strings. _Default: `false`_
   * `filter`(object, key) [function]: Expected to return a boolean of whether to include the property in the output.
-  * `transform`(object, key, val) [function]: Expected to return a string that transforms the string that resulted from stringifying a given property. 
+  * `transform`(object, key, val) [function]: Expected to return a string that transforms the string that resulted from stringifying a given property.
     * This can be used to detect special types of objects that need to be stringified in a particular way, or to return an alternate string in this case. e.g. given a field named "password" return "****"
 ---
 
@@ -312,16 +312,16 @@ Via **package.js**
 
 ## Using TypeScript in a bundle?
 
-To get accurate file & line references when transpiling your code. 
+To get accurate file & line references when transpiling your code.
 You will need to enable inlining sourceMaps.
 There are two steps you need to add.
 
 1. **Generate source-map as part of the build**
-    * In your `tsconfig.json` add `"sourceMap": true` under "*compilerOptions*" 
+    * In your `tsconfig.json` add `"sourceMap": true` under "*compilerOptions*"
 
 2. **Enable sourceMap support in Node**
     * **Node v12.12+** : can just add the ` --enable-source-maps ` flag to the node command
-      
+
       OR
     * **Node older** : Will need to install **[NPM->source-map-support](https://www.npmjs.com/package/source-map-support)** and add `require('source-map-support').install()` to the top for you service
 
