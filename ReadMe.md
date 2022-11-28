@@ -6,22 +6,24 @@
 
 ### Scribbles has some nice features.
 
-* [Customised output](#how-to-customise-log-output)
-* [Tracing logs](#how-to-trace-logs)
+* **[Customised output](#how-to-customise-log-output)**
+* **[Tracing logs](#how-to-trace-logs)**
   * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
   * use `traceTrigger` to filter a set of logs to only when there is a threshold is met or exceeded
   * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
   * scribbles will attempt to intercept all outgoing requests and inject the headers :sunglasses:
   * Can **automatically** inject IDs into outgoing headers. Works with [axios](https://www.npmjs.com/package/axios#axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
-* More insight in your logs
+* **More insight in your logs**
   * Git repository name
   * Current branch
   * Last commit hash
   * Environment: local / dev / prod
-* Static code analysis to log file & line numbers
+* **Static source code analysis**
   * Resolve the calling location **without** the expensive of a stacktrace
-  * If you App is bundle, scribbles try to load with the map file to report the correct source file and line :sunglasses:
-* [Generate performance reports](#performance-monitoring)
+  * Can load map file to report the correct source file and line
+    *  Helpful when your Service is build/bundled
+    *  Deploying **Lambda** style functions
+* **[Generate performance reports](#performance-monitoring)**
   * Detailed metrics on service and host
   * Flag when the eventloop is blocking. This can happen when your app is over-loaded.
 
