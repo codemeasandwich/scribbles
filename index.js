@@ -146,7 +146,7 @@ function parceStringVals(fragments,...vals){
 
 function scribble(from, level, ...args){
 
-    const argNames = from.args.map(a=>a ? a(parceStringVals) : "")
+    const argNames = from ? from.args.map(a=>a ? a(parceStringVals) : "") : []
 
     let statusinfo, now;
     if("status" === level){

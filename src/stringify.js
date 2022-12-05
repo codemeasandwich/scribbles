@@ -157,18 +157,25 @@ module.exports = function stringify(input, options, pad) {
 		}
 
 		if (isObject(input)) {
-			let objectKeys = [], getVal = (key)=>input[key], typeOfObj = ""
-		      if(input instanceof Map){
-			getVal = (key)=>input.get(key)
-			objectKeys = Array.from(input.keys())
-			typeOfObj = "Map"
-		      } else {
-			//typeOfObj = getObjName(input)
-			objectKeys = [
-			 ...Object.keys(input),
-			 ...getOwnEnumPropSymbols(input),
-		       ];
-		      }
+			let objectKeys = [], getVal = (key)=>input[key], typeOfObj = getObjName(input)
+		  if(input instanceof Map){
+				getVal = (key)=>input.get(key)
+				objectKeys = Array.from(input.keys())
+				typeOfObj = "Map"
+		  } else {
+				//typeOfObj = getObjName(input)
+				objectKeys = [
+				 ...Object.keys(input),
+				 ...getOwnEnumPropSymbols(input),
+			       ];
+				 if("Promise" === typeOfObj.trim()){
+					 ["then","catch","finally"].forEach( key => {
+					 	if("function" === typeof input[key]){
+							objectKeys.push(key)
+						}
+					 })
+	      }
+			}
 
 			if (options.filter) {
 				// eslint-disable-next-line unicorn/no-array-callback-reference, unicorn/no-array-method-this-argument
