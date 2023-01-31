@@ -299,7 +299,7 @@ if(1 === args.length
                                                     value:outputValue,
                                                     message:outputMessage,
                                                     stackTrace:outputStackTrace
-                                                  }))
+                                                  })).trim()
       }
     } // END body
 
@@ -658,6 +658,10 @@ scribbles.config = function scribblesConfig(opts = {}){
   config.__compile = compile(config.format)
 
 } // END scribblesConfig
+
+scribbles.config.reset = ()=>{
+  scribbles.config(packageJson_scribbles)
+}
 
 const resirvedFnNames = Object.keys(scribbles);
 

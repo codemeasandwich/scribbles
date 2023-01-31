@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`check defaults level output to console 1`] = `"scribbles:test:master [ ] 1995-10-14T00:00:00.000 #c353530 <error> test.js:25 HelloWorld"`;
+
+exports[`check defaults level output to console 2`] = `"scribbles:test:master [ ] 1995-10-14T00:00:00.000 #c353530 <warn> test.js:25 HelloWorld"`;
+
+exports[`check defaults level output to console 3`] = `"scribbles:test:master [ ] 1995-10-14T00:00:00.000 #c353530 <log> test.js:25 HelloWorld"`;
+
+exports[`check defaults level output to console 4`] = `"scribbles:test:master [ ] 1995-10-14T00:00:00.000 #c353530 <info> test.js:25 HelloWorld"`;
+
+exports[`check defaults level output to console 5`] = `"scribbles:test:master [ ] 1995-10-14T00:00:00.000 #c353530 <debug> test.js:25 HelloWorld"`;
