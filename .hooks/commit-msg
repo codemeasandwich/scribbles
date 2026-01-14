@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# .hooks/commit-msg - Enforce conventional commit format
+set -euo pipefail
+
+MSG_FILE="$1"
+if [ ! -f "$MSG_FILE" ]; then
+  echo "ERROR: commit-msg hook expects path to commit message file." >&2
+  exit 1
+fi
+
+# Read first non-empty line (strip CR)
+FIRST_LINE=$(sed -n '1p' "$MSG_FILE" | tr -d '\r')
+
+TYPES="build|ci|docs|feat|fix|perf|refactor|style|test"
+
+# Must match: ^(type)(optional !)?: <message-with-at-least-one-non-space-char>
+if ! printf '%s\n' "$FIRST_LINE" | grep -Eqi "^(${TYPES})(!)?:[[:space:]]*[^[:space:]]"; then
+  cat >&2 <<'ERR'
+ERROR: Commit message header invalid.
+Required format: <type><!optional>: <message>
+Where <type> is one of: build, ci, docs, feat, fix, perf, refactor, style, test
+Examples:
+  feat: add user profile
+  feat!: change authentication API (breaking)
+
+Make sure there's a non-empty message after ": ".
+ERR
+  exit 1
+fi
+
+# Enforce max 80 chars for the first line
+LENGTH=${#FIRST_LINE}
+MAX=80
+if [ "$LENGTH" -gt "$MAX" ]; then
+  echo "ERROR: Commit message first line is ${LENGTH} chars (max ${MAX})." >&2
+  exit 1
+fi
+
+exit 0

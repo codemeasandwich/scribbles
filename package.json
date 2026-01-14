@@ -2,9 +2,14 @@
   "name": "scribbles",
   "version": "1.6.0",
   "description": "Scribbles is a log and tracing lib for Node",
-  "main": "index.js",
+  "main": "dist/scribbles.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "rm -rf .git/hooks/* && cp -R .hooks/* .git/hooks/ && chmod +x .git/hooks/* .git/hooks/pre-commit.d/* 2>/dev/null || true",
+    "test": "jest --no-cache",
+    "test:watch": "jest --watch --runInBand",
+    "test:cover": "jest --coverage --no-cache --detectOpenHandles",
+    "release": "bash scripts/publish.sh",
+    "prepublishOnly": "npx esbuild index.js --bundle --minify --sourcemap --outfile=dist/scribbles.js"
   },
   "repository": {
     "type": "git",
@@ -22,12 +27,12 @@
     "nodejs"
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
-  "dependencies": {
+  "devDependencies": {
+    "jest": "^29.3.1",
     "@ashleyw/cls-hooked": "^5.0.1",
     "moment": "^2.24.0",
     "node-hook": "^1.0.0",
     "source-map-support": "^0.5.21",
     "string-template": "^1.0.0"
-  },
-  "devDependencies": {}
+  }
 }
