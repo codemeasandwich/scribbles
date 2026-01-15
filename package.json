@@ -8,6 +8,8 @@
     "test": "jest --no-cache",
     "test:watch": "jest --watch --runInBand",
     "test:cover": "jest --coverage --no-cache --detectOpenHandles",
+    "test:subprocess": "nyc --silent node __tests__/subprocess/run-all.js",
+    "test:full-coverage": "jest --coverage --no-cache && npm run test:subprocess && nyc report --reporter=text",
     "release": "bash scripts/publish.sh",
     "prepublishOnly": "npx esbuild index.js --bundle --minify --sourcemap --outfile=dist/scribbles.js"
   },
@@ -28,11 +30,25 @@
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "devDependencies": {
-    "jest": "^29.3.1",
     "@ashleyw/cls-hooked": "^5.0.1",
+    "jest": "^29.3.1",
     "moment": "^2.24.0",
     "node-hook": "^1.0.0",
+    "nyc": "^17.1.0",
     "source-map-support": "^0.5.21",
     "string-template": "^1.0.0"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/__tests__/fixtures/",
+      "/__tests__/subprocess/"
+    ]
+  },
+  "nyc": {
+    "include": ["index.js", "src/**/*.js"],
+    "exclude": ["__tests__/**", "dist/**"],
+    "reporter": ["text", "lcov"],
+    "report-dir": ".nyc_output"
   }
 }
