@@ -20,8 +20,12 @@ function status(){
               // if the serivce is NOT connected to a port
               return { port:null }
             }
+            const matchingLine = text.split("\n").filter(line => line.slice("node".length).trim().startsWith(process.pid))[0];
+            if(!matchingLine){
+              return { port:null }
+            }
             const [command, pid, user, fd, type, device, size_off, node,name] =
-            text.split("\n").filter(line => line.slice("node".length).trim().startsWith(process.pid))[0].split(" ").filter(item => item);
+            matchingLine.split(" ").filter(item => item);
             const port = +name.split(":").pop()
             return { command, pid, user, fd, type, device, size_off, node,name, port }
           }) // END lsof -i -P -n | grep LISTEN | grep
@@ -29,8 +33,12 @@ function status(){
       ).then((lsof) => Promise.all([
 
       cliInfo("ps -v | grep " + process.pid, text => {
+        const matchingLine = text.split("\n").filter(line => line.trim().startsWith(process.pid))[0];
+        if(!matchingLine){
+          return { pid: process.pid, stat: null, time: null, sl: null, re: null, pagein: null, vsz: null, rss: null, lim: null, tsiz: null, cpu: 0, mem: 0, command: null, args: null }
+        }
         const [pid, stat, time, sl,re, pagein, vsz, rss, lim, tsiz, cpu, mem, command, args] =
-        text.split("\n").filter(line => line.trim().startsWith(process.pid))[0].split(" ").filter(item => item);
+        matchingLine.split(" ").filter(item => item);
         return { pid, stat, time, sl,re, pagein, vsz, rss, lim, tsiz, cpu:+cpu, mem:+mem, command, args }
       }), // END ps -v | grep
 
@@ -123,7 +131,7 @@ function getCPUUsage(){
           var perc	= idle / total;
 
           resolve( { percFree: perc, percUsed:(1 - perc) });
-      }, 500 );
+      }, 500 ).unref();
   }) // END new Promise
 } // END getCPUUsage
 
@@ -161,4 +169,4 @@ setTimeout(function () {
         }
         start = process.hrtime();
     }, interval).unref();
-},10000) // wait 10 sec for everything to get setup & running
+},10000).unref() // wait 10 sec for everything to get setup & running
