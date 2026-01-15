@@ -128,6 +128,91 @@ There is a `config` that takes a configuration object.
   * `filter`(object, key) [function]: Expected to return a boolean of whether to include the property in the output.
   * `transform`(object, key, val) [function]: Expected to return a string that transforms the string that resulted from stringifying a given property.
     * This can be used to detect special types of objects that need to be stringified in a particular way, or to return an alternate string in this case. e.g. given a field named "password" return "****"
+
+---
+
+## Value Serialization
+
+Scribbles automatically serializes values passed to log functions into readable string representations. Here's how different data types are formatted:
+
+### Primitive Types
+
+| Type | Example | Output |
+|------|---------|--------|
+| `null` | `null` | `null` |
+| `undefined` | `undefined` | `undefined` |
+| `number` | `123` | `123` |
+| `boolean` | `true` | `true` |
+| `string` | `"hello"` | `'hello'` |
+| `NaN` | `NaN` | `NaN` |
+| `Symbol` | `Symbol('s')` | `Symbol(s)` |
+
+### Objects & Arrays
+
+| Type | Example | Output |
+|------|---------|--------|
+| `object` | `{foo:'bar'}` | `{ foo:'bar' }` |
+| `array` | `[1,2,3]` | `[ 1, 2, 3 ]` |
+| nested array | `[[1,2]]` | `[ [ 1, 2 ] ]` |
+| nested object | `{a:{b:1}}` | `{ a:{ b:1 } }` |
+
+### Special Types
+
+| Type | Example | Output |
+|------|---------|--------|
+| `Date` | `new Date('2024-01-01')` | `Date(2024-01-01T00:00:00.000Z)` |
+| `Error` | `new Error('oops')` | `Error("oops")` |
+| `Buffer` | `Buffer.from([1,2,3])` | `Buffer[ 1, 2, 3 ]` |
+| `Map` | `new Map([['a',1]])` | `Map{ a:1 }` |
+| `Set` | `new Set([1,2])` | `Set[ 1, 2 ]` |
+| `RegExp` | `/foo/gi` | `/foo/gi` |
+
+### Functions
+
+| Type | Example | Output |
+|------|---------|--------|
+| arrow function | `(a,b)=>{}` | `(a,b)=>{-}` |
+| named function | `function foo(){}` | `foo(){-}` |
+| anonymous function | `function(){}` | `ƒ(){-}` |
+
+### Circular References
+
+Circular references are detected and displayed safely:
+
+```js
+const obj = { name: 'test' };
+obj.self = obj;
+scribbles.log(obj);
+// Output: { name:'test', self:{ ...! } }
+
+const arr = [1, 2];
+arr.push(arr);
+scribbles.log(arr);
+// Output: [ 1, 2, [ ...! ] ]
+```
+
+### Depth Limiting
+
+Use `pretty.depth` to limit how deep nested structures are displayed:
+
+```js
+scribbles.config({ pretty: { depth: 2 } });
+scribbles.log({ a: { b: { c: { d: 1 } } } });
+// Output: { a:{ b:{ + } } }
+```
+
+### String-like JSON
+
+Strings that look like JSON are prefixed to avoid confusion:
+
+```js
+scribbles.log("{not_json}");
+// Output: String"{not_json}"
+
+scribbles.log("[1,2,3]");  
+// Output: String"[1,2,3]"
+```
+
 ---
 
 ### Example:
