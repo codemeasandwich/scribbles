@@ -3,27 +3,27 @@
 //=====================================================
 const http = require('http')
 const reqHttp = http.request.bind(http)
-function hijacker(scribbles){
+function hijacker(scribbles, config) {
 
-  http.request = function httpRequestWrapper(url, options, callback){
+  http.request = function httpRequestWrapper(url, options, callback) {
 
-    if( ! config.headers && ! config.headersMapping ){
+    if (!config.headers && !config.headersMapping) {
       return reqHttp(url, options, callback)
     }
 
-    if('function' === typeof options){
+    if ('function' === typeof options) {
       callback = options
       options = {}
     }
 
-    if('object' === typeof url){
+    if ('object' === typeof url) {
       options = url;
       url = null;
     }
 
     options.headers = scribbles.trace.headers(options.headers || {})
 
-    if(url){
+    if (url) {
       return reqHttp(url, options, callback)
     } else {
       return reqHttp(options, callback)
