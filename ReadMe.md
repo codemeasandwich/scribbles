@@ -677,7 +677,7 @@ function traceMiddleware({headers}, res, next){
 } // END express
 ```
 
-> **Security Note**: Headers like `x-forwarded-for` can be spoofed by clients. Only trust these headers when your application runs behind a trusted reverse proxy (e.g., AWS ALB, Nginx, CloudFlare). For Express apps, configure [`app.set('trust proxy', ...)`](https://expressjs.com/en/guide/behind-proxies.html) appropriately. The `spanLabel` is intended for logging/tracing context only—do not use it for security-critical decisions like authentication or rate limiting.
+> **Security Note**: Headers like `x-forwarded-for` can be spoofed by clients. Only trust these headers when your application runs behind a trusted reverse proxy (e.g., AWS ALB, Nginx, CloudFlare). For Express apps, configure [`app.set('trust proxy', ...)`](https://expressjs.com/en/guide/behind-proxies.html) appropriately. The `spanLabel` is intended for logging/tracing context only—do not use it for security-critical decisions like authentication or rate limiting. For more robust proxy detection, consider using [IP intelligence API services](https://www.abstractapi.com/guides/how-to-detect-if-an-ip-address-is-using-a-proxy).
 
 #### if you want to handle the out going headers
 
