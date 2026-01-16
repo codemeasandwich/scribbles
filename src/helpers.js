@@ -35,7 +35,7 @@ function deepMerge(target, source) {
 function getSource(stack) {
   const rawLines = stack.split('\n')
   const originFile = (rawLines[2] || rawLines[1]).split('/');
-  const file = originFile[originFile.length - 1].split(':')[0];
+  const file = decodeURIComponent(originFile[originFile.length - 1].split(':')[0]);
   const line = originFile[originFile.length - 1].split(':')[1];
   const col = originFile[originFile.length - 1].split(':')[2];
   let path = originFile.splice(1).join('/')

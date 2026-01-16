@@ -3,10 +3,10 @@
 # This script runs all check scripts in .hooks/pre-commit.d/
 # Each check script must exit 0 on success, non-zero on failure.
 
-# Only run on main branch
+# Only run on master branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo "🦍 Skipping pre-commit checks on branch: $CURRENT_BRANCH (checks only run on main)"
+if [ "$CURRENT_BRANCH" != "master" ]; then
+    echo "🦍 Skipping pre-commit checks on branch: $CURRENT_BRANCH (checks only run on master)"
     exit 0
 fi
 
