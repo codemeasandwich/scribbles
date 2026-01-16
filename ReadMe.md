@@ -118,7 +118,7 @@ There is a `config` that takes a configuration object.
   * `null` to disable forwarding headers
 * **headersMapping** [object:[array/string]]
   * An `object` of output keys with input selector values.
-  * Values can be A `string` OR `array of strings`: that will be taken in order of preference to be selected(i.e. If an incoming request has a header named the same as first index. Ues that, else check the next index and so on)
+  * Values can be a `string` OR `array of strings`: that will be taken in order of preference to be selected (i.e. If an incoming request has a header named the same as first index. Use that, else check the next index and so on)
 * **gitEnv** [Object] - the **attribute names** at the **end** of their `process.env`
   * `hash`: attribute name of git short hash
   * `repo`: attribute name of git repository name
@@ -699,6 +699,30 @@ app.get('/', function (req, res){
 
 }) // END app.get '/'
 ```
+
+---
+
+### headersMapping Example
+
+Use `headersMapping` to rename headers from incoming requests to different names for outgoing requests. This is useful when different services use different header naming conventions.
+
+```js
+scribbles.config({
+  // Simple mapping: rename 'x-request-id' to 'x-trace-id'
+  headersMapping: {
+    'x-trace-id': 'x-request-id'
+  }
+});
+
+// With fallback priority: try 'x-correlation-id' first, then 'x-request-id'
+scribbles.config({
+  headersMapping: {
+    'x-trace-id': ['x-correlation-id', 'x-request-id']
+  }
+});
+```
+
+The array form checks headers in order - the first matching header is used.
 
 ---
 
