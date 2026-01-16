@@ -20,6 +20,7 @@
   * Environment: local / dev / prod
 * **Static source code analysis**
   * Resolve the calling location **without** the expensive of a stacktrace
+  * **Automatic variable name extraction** - displays variable names in log output
   * Can load map file to report the correct source file and line
     *  Helpful when your Service is build/bundled
     *  Deploying **Lambda** style functions
@@ -217,6 +218,61 @@ scribbles.log("{not_json}");
 scribbles.log("[1,2,3]");  
 // Output: String"[1,2,3]"
 ```
+
+---
+
+## Automatic Variable Name Extraction
+
+Scribbles performs static code analysis at load time to automatically detect and display the names of variables passed to log functions. This makes it easier to identify which variable you're logging without manually adding labels.
+
+### How it works
+
+When you call `scribbles.log(myVariable)`, scribbles automatically extracts "myVariable" from the source code and includes it in the output:
+
+```js
+const userData = { name: 'Alice', age: 30 };
+scribbles.log(userData);
+// Output: ... userData:{ name:'Alice', age:30 }
+
+const count = 42;
+scribbles.log(count);
+// Output: ... count:42
+```
+
+### Works with complex expressions
+
+Variable names are extracted for array access, object properties, and more:
+
+```js
+const users = [{ name: 'Alice' }, { name: 'Bob' }];
+scribbles.log(users[0]);
+// Output: ... users[0]:{ name:'Alice' }
+
+const config = { db: { host: 'localhost' } };
+scribbles.log(config.db);
+// Output: ... config.db:{ host:'localhost' }
+```
+
+### Type annotations
+
+When logging values, scribbles adds type annotations to help identify the data type:
+
+| Type | Annotation |
+|------|------------|
+| Function | `varName:f(){..}` |
+| Error | `varName:Error-Error()` |
+| Date | `varName:Date(2024-01-01T00:00:00.000Z)` |
+| Buffer | `varName:Buffer[..]` |
+| Map | `varName:Map{..}` |
+| Set | `varName:Set[..]` |
+| Array | `varName:[..]` |
+| Object | `varName:{..}` |
+| String | `varName:"value"` |
+
+### Limitations
+
+- Only works with Node.js `require()` - bundled/transpiled code needs source maps
+- Literal values (strings, numbers, booleans) don't get variable name extraction since there's no variable name to extract
 
 ---
 
