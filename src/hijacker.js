@@ -25,7 +25,7 @@ function hijacker(scribbles, config) {
   function createWrapper(originalRequest) {
     return function requestWrapper(url, options, callback) {
 
-      if (!config.headers && !config.headersMapping) {
+      if (!config || (!config.headers && !config.headersMapping)) {
         return originalRequest(url, options, callback)
       }
 
