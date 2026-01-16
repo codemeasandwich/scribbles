@@ -52,15 +52,16 @@ const traceCount = {
   increment: function() { this.value++ }
 }
 
+const scribbles = {}
+
 const scribble = createScribble({
   sVer,
   gitValues,
   hostname,
   cuidPrefix,
-  pValues
+  pValues,
+  scribbles
 });
-
-const scribbles = {}
 
 const trace = createTrace({
   cuidPrefix,
@@ -92,6 +93,8 @@ resirvedFnNames.push('config');
 resirvedFnNames.push('status');
 resirvedFnNames.push('timer');
 resirvedFnNames.push('timerEnd');
+// Add group functions to reserved names (issue #13)
+resirvedFnNames.push('group');
 
 scribbles.config(packageJson_scribbles)
 

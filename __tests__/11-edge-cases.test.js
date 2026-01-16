@@ -43,24 +43,32 @@ describe('Reserved Log Levels', () => {
         }).toThrow(/middleware/);
     });
 
-    // Note: timer, timerEnd, and status are NOT reserved - they're added
-    // dynamically inside scribblesConfig, after resirvedFnNames is captured
-    it('should accept timer as a log level (not reserved)', () => {
+    // Note: timer, timerEnd, status, and group are reserved (issue #24, #13)
+    it('should reject timer as a log level (reserved)', () => {
         expect(() => {
             scribbles.config({
                 levels: ['timer', 'error', 'warn', 'log'],
                 logLevel: 'log'
             });
-        }).not.toThrow();
+        }).toThrow(/timer/);
     });
 
-    it('should accept status as a log level (not reserved)', () => {
+    it('should reject status as a log level (reserved)', () => {
         expect(() => {
             scribbles.config({
                 levels: ['status', 'error', 'warn', 'log'],
                 logLevel: 'log'
             });
-        }).not.toThrow();
+        }).toThrow(/status/);
+    });
+
+    it('should reject group as a log level (reserved)', () => {
+        expect(() => {
+            scribbles.config({
+                levels: ['group', 'error', 'warn', 'log'],
+                logLevel: 'log'
+            });
+        }).toThrow(/group/);
     });
 });
 

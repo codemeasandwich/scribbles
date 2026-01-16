@@ -23,6 +23,8 @@ interface PrettyOptions {
     filter?: (obj: object, key: string) => boolean;
     /** Transform function to modify stringified property values */
     transform?: (obj: object, key: string, value: string) => string;
+    /** Use ASCII brackets (⎡⎜⎣) for group indentation (default: false) */
+    groupBrackets?: boolean;
 }
 
 /**
@@ -122,6 +124,10 @@ interface ContextInfo {
     fileName: string;
     lineNumber: number;
     method?: string;
+    /** Current group nesting level (0 when not in a group) */
+    groupLevel?: number;
+    /** Joined labels of all parent groups */
+    groupLabel?: string;
 }
 
 /**
@@ -394,6 +400,31 @@ interface Middleware {
 }
 
 /**
+ * Group function collection for console.group-style logging
+ */
+interface GroupFunction {
+    /**
+     * Start a labeled console group
+     * @param label - Optional group label
+     * @returns Group ID for targeted closing
+     */
+    start: (label?: string) => number;
+
+    /**
+     * Start a collapsed console group
+     * @param label - Optional group label
+     * @returns Group ID for targeted closing
+     */
+    collapsed: (label?: string) => number;
+
+    /**
+     * End a console group
+     * @param groupId - Optional group ID to close (defaults to LIFO - closes last opened)
+     */
+    end: (groupId?: number) => LogEntry;
+}
+
+/**
  * Main scribbles interface
  */
 interface Scribbles {
@@ -442,6 +473,11 @@ interface Scribbles {
      * @param message - Optional message
      */
     status: LogFunction;
+
+    /**
+     * Console grouping functions for organizing related log messages
+     */
+    group: GroupFunction;
 }
 
 declare const scribbles: Scribbles;

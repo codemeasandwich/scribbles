@@ -21,10 +21,11 @@ const notUsed = { not: 'used' }
  * @param {string} deps.hostname - Machine hostname
  * @param {string} deps.cuidPrefix - Unique instance prefix
  * @param {Object} deps.pValues - Process values
+ * @param {Object} deps.scribbles - Reference to scribbles object for group stack access
  * @returns {Function} The scribble logging function
  */
 function createScribble(deps) {
-  const { sVer, gitValues, hostname, cuidPrefix, pValues } = deps;
+  const { sVer, gitValues, hostname, cuidPrefix, pValues, scribbles } = deps;
 
   /**
    * Core logging function that creates structured log entries
@@ -117,6 +118,8 @@ function createScribble(deps) {
         fileName: from.file,
         lineNumber: from.line,
         method: from.type,
+        groupLevel: scribbles._groupStack ? scribbles._groupStack.length : 0,
+        groupLabel: scribbles._groupStack ? scribbles._groupStack.map(g => g.label).filter(Boolean).join(' > ') : '',
       },
       input: {
         message: notUsed === message ? undefined : message,
@@ -171,7 +174,28 @@ function createScribble(deps) {
           : "") + stackTrace.map(line => ` at ${line}`).join("\n")
           : "";
 
-        return config.__compile(Object.assign(all, {
+        // Group indentation prefix
+        let groupPrefix = ''
+        const groupLevel = body.context.groupLevel || 0
+        if (groupLevel > 0 || ['group', 'groupCollapsed', 'groupEnd'].includes(level)) {
+          if (config.pretty && config.pretty.groupBrackets) {
+            // ASCII bracket style
+            if (level === 'group' || level === 'groupCollapsed') {
+              groupPrefix = '⎡ '
+            } else if (level === 'groupEnd') {
+              groupPrefix = '⎣\n'
+            } else {
+              groupPrefix = '⎜ ' + '  '.repeat(Math.max(0, groupLevel - 1))
+            }
+          } else {
+            // Simple indentation (indent logs inside groups, not the group markers themselves)
+            if (!['group', 'groupCollapsed', 'groupEnd'].includes(level)) {
+              groupPrefix = '  '.repeat(groupLevel)
+            }
+          }
+        }
+
+        return groupPrefix + config.__compile(Object.assign(all, {
           time,
           value: outputValue,
           message: outputMessage,

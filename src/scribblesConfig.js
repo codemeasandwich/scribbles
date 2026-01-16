@@ -161,6 +161,48 @@ function createConfig(deps) {
       return result
     }// END timeEnd
 
+    // Group functions (issue #13)
+    let groupIdCounter = 0
+    const groupStack = [] // Array of { id, label, collapsed }
+
+    scribbles.group = {
+      start: (label) => {
+        const id = ++groupIdCounter
+        groupStack.push({ id, label: label || '' })
+        const from = getSource(new Error().stack)
+        const result = scribble.call(null, from, 'group', label || 'Group')
+        result.groupId = id
+        return id
+      },
+
+      collapsed: (label) => {
+        const id = ++groupIdCounter
+        groupStack.push({ id, label: label || '', collapsed: true })
+        const from = getSource(new Error().stack)
+        const result = scribble.call(null, from, 'groupCollapsed', label || 'Group')
+        result.groupId = id
+        return id
+      },
+
+      end: (groupId) => {
+        const from = getSource(new Error().stack)
+        if (groupId !== undefined) {
+          // Close specific group and all nested groups inside it
+          const idx = groupStack.findIndex(g => g.id === groupId)
+          if (idx !== -1) {
+            groupStack.splice(idx)
+          }
+        } else {
+          // LIFO - close last opened
+          groupStack.pop()
+        }
+        return scribble.call(null, from, 'groupEnd', '')
+      }
+    }
+
+    // Export groupStack for scribble.js to access
+    scribbles._groupStack = groupStack
+
     config.__compile = compile(config.format)
 
   } // END scribblesConfig

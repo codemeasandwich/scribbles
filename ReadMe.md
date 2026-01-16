@@ -519,9 +519,87 @@ setTimeout(()=>{
 ```
 Output: You see the time it took to run the code
 ```cli
-myRepo:local:master [ ] 2022-06-27T13:04:52.133 <timer> app.js:18 Yo (+0.00ms|0.00ms)  
-myRepo:local:master [ ] 2022-06-27T13:04:52.552 <timer> app.js:20 Yo:123 (+419.40ms|419.40ms)  
+myRepo:local:master [ ] 2022-06-27T13:04:52.133 <timer> app.js:18 Yo (+0.00ms|0.00ms)
+myRepo:local:master [ ] 2022-06-27T13:04:52.552 <timer> app.js:20 Yo:123 (+419.40ms|419.40ms)
 myRepo:local:master [ ] 2022-06-27T13:04:52.875 <timerEnd> app.js:22 Yo:done! (+323.21ms|742.61ms)
+```
+
+---
+
+## Console Grouping
+
+You can group related log messages together using `scribbles.group.start()` and `scribbles.group.end()`. This is useful for organizing logs from complex operations.
+
+```js
+const groupId = scribbles.group.start('User Authentication')
+scribbles.log('Checking credentials')
+scribbles.log('Validating token')
+scribbles.group.end()
+```
+
+Output:
+```
+myRepo:local:master [ ] 2022-06-27T16:24:06.473 #3d608bf <group> index.js:10 User Authentication
+  myRepo:local:master [ ] 2022-06-27T16:24:06.474 #3d608bf <log> index.js:11 Checking credentials
+  myRepo:local:master [ ] 2022-06-27T16:24:06.475 #3d608bf <log> index.js:12 Validating token
+myRepo:local:master [ ] 2022-06-27T16:24:06.476 #3d608bf <groupEnd> index.js:13
+```
+
+### Group Functions
+
+1. `scribbles.group.start(label)` - Starts a new group with an optional label. Returns a unique group ID.
+2. `scribbles.group.collapsed(label)` - Starts a collapsed group (for log viewers that support collapsing).
+3. `scribbles.group.end(groupId?)` - Ends a group. If no ID is provided, closes the last opened group (LIFO).
+
+### Nested Groups
+
+Groups can be nested for hierarchical organization:
+
+```js
+scribbles.group.start('Request Handler')
+scribbles.log('Received request')
+
+scribbles.group.start('Database Query')
+scribbles.log('Connecting to database')
+scribbles.log('Executing query')
+scribbles.group.end()
+
+scribbles.log('Sending response')
+scribbles.group.end()
+```
+
+### Closing Specific Groups
+
+You can close a specific group (and all groups nested inside it) by passing its ID:
+
+```js
+const outerGroup = scribbles.group.start('Outer')
+scribbles.group.start('Inner 1')
+scribbles.group.start('Inner 2')
+scribbles.group.end(outerGroup) // Closes all three groups at once
+```
+
+### ASCII Bracket Mode
+
+For enhanced visual grouping, enable ASCII brackets with the `pretty.groupBrackets` option:
+
+```js
+scribbles.config({
+  pretty: { groupBrackets: true }
+})
+
+scribbles.group.start('User Authentication')
+scribbles.log('Checking credentials')
+scribbles.log('Validating token')
+scribbles.group.end()
+```
+
+Output:
+```
+⎡ myRepo:local:master [ ] ... <group> User Authentication
+⎜ myRepo:local:master [ ] ... <log> Checking credentials
+⎜ myRepo:local:master [ ] ... <log> Validating token
+⎣
 ```
 
 ---
