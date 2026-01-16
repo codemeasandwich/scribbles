@@ -76,6 +76,8 @@ interface ScribblesConfig {
     gitEnv?: GitEnvConfig;
     /** Pretty printing options */
     pretty?: PrettyOptions;
+    /** Global object to attach log functions to ("console", "global", or custom object) */
+    global?: "console" | "global" | { [key: string]: unknown };
 }
 
 // =============================================================================

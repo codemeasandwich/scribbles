@@ -99,6 +99,16 @@ function createConfig(deps) {
       }
     }) // END config.levels.forEach
 
+    // Attach log functions to a global object if configured
+    if (config.global) {
+      const globalTarget = config.global === "global" ? global
+        : config.global === "console" ? console
+        : config.global;
+      config.levels.forEach((logLevel) => {
+        globalTarget[logLevel] = scribbles[logLevel];
+      });
+    }
+
     scribbles.status = scribble.bind(null, null, "statusX")
     scribbles.status.at = function at(from, label, value, error) {
       const args = Array.prototype.slice.call(arguments)

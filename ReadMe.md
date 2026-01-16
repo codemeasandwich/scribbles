@@ -128,6 +128,10 @@ There is a `config` that takes a configuration object.
   * `filter`(object, key) [function]: Expected to return a boolean of whether to include the property in the output.
   * `transform`(object, key, val) [function]: Expected to return a string that transforms the string that resulted from stringifying a given property.
     * This can be used to detect special types of objects that need to be stringified in a particular way, or to return an alternate string in this case. e.g. given a field named "password" return "****"
+* **global** [string/object]
+  * `"console"` - Attach log functions to the console object (replaces console.log, console.error, etc.)
+  * `"global"` - Attach log functions to the global object
+  * `object` - Attach log functions to a custom object
 
 ---
 
@@ -295,6 +299,22 @@ scribbles.log("hello world")
    },
 }*/
 ```
+
+---
+
+## Using scribbles globally
+
+You can configure scribbles to attach its log functions to the console or global object:
+
+```js
+scribbles.config({ global: "console" })
+
+// Now you can use:
+console.log("hello world")  // Uses scribbles formatting
+console.error("something went wrong")  // Uses scribbles formatting
+```
+
+This is helpful for gradually adopting scribbles in an existing codebase, or for ensuring all logging uses the same format without changing existing `console.log` calls.
 
 ---
 
