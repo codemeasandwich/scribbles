@@ -8,7 +8,7 @@ describe('getGitStatus fallback behavior', () => {
     it('should handle environment where git is not available', () => {
         // getGitStatus is loaded once at module init
         // We can verify its default structure
-        const gitStatus = require('../src/getGitStatus');
+        const gitStatus = require('../src/system/getGitStatus');
 
         expect(gitStatus).toBeDefined();
         expect(typeof gitStatus.hash).toBe('string');
@@ -19,7 +19,7 @@ describe('getGitStatus fallback behavior', () => {
 
 describe('checkNodeVer module', () => {
     it('should export the version check', () => {
-        const ver = require('../src/checkNodeVer');
+        const ver = require('../src/utils/checkNodeVer');
 
         // Should be boolean or version number
         expect(ver !== undefined).toBe(true);
@@ -35,7 +35,7 @@ describe('checkNodeVer module', () => {
 });
 
 describe('helpers module', () => {
-    const helpers = require('../src/helpers');
+    const helpers = require('../src/utils/helpers');
 
     it('should export deepMerge function', () => {
         expect(typeof helpers.deepMerge).toBe('function');
@@ -55,7 +55,7 @@ describe('helpers module', () => {
 
 describe('config module', () => {
     it('should export default config', () => {
-        const config = require('../src/config');
+        const config = require('../src/core/config');
 
         expect(config).toBeDefined();
         expect(typeof config).toBe('object');
@@ -63,7 +63,7 @@ describe('config module', () => {
 });
 
 describe('args2keys module', () => {
-    const args2keys = require('../src/args2keys');
+    const args2keys = require('../src/parsing/args2keys');
 
     it('should export a function', () => {
         expect(typeof args2keys).toBe('function');
@@ -84,7 +84,7 @@ describe('args2keys module', () => {
 });
 
 describe('utils module', () => {
-    const utils = require('../src/utils');
+    const utils = require('../src/utils/utils');
 
     it('should export expected functions', () => {
         // The utils module exports whatever is needed
@@ -93,7 +93,7 @@ describe('utils module', () => {
 });
 
 describe('stringify module edge cases', () => {
-    const stringify = require('../src/stringify');
+    const stringify = require('../src/formatting/stringify');
 
     it('should handle WeakMap', () => {
         const wm = new WeakMap();

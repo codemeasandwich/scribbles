@@ -5,7 +5,7 @@
 describe('Colored Log Output', () => {
   let scribbles;
   let stdOutCalls;
-  const { ANSI, colorize, shouldEnableColors, defaultColorScheme, colorblindScheme } = require('../src/colors');
+  const { ANSI, colorize, shouldEnableColors, defaultColorScheme, colorblindScheme } = require('../src/formatting/colors');
 
   beforeEach(() => {
     jest.resetModules();
@@ -166,7 +166,7 @@ describe('Colored Log Output', () => {
 });
 
 describe('Color utilities', () => {
-  const { ANSI, colorize, shouldEnableColors } = require('../src/colors');
+  const { ANSI, colorize, shouldEnableColors } = require('../src/formatting/colors');
 
   describe('colorize()', () => {
     it('should wrap text with color codes', () => {
@@ -232,7 +232,7 @@ describe('Color utilities', () => {
 });
 
 describe('Color schemes', () => {
-  const { defaultColorScheme, colorblindScheme } = require('../src/colors');
+  const { defaultColorScheme, colorblindScheme } = require('../src/formatting/colors');
 
   describe('defaultColorScheme', () => {
     it('should map all log levels to colors', () => {

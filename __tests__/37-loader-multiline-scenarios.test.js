@@ -15,7 +15,7 @@ describe('Loader: Multi-line scribbles call parsing', () => {
 
     beforeAll(() => {
         // IMPORTANT: Loader must be required first to intercept file loads
-        require('../src/loader');
+        require('../src/parsing/loader');
         scribbles = require('../index');
         // Fixture is transformed by loader - multi-line calls are parsed
         fixture = require('./fixtures/loader-multiline.stub');

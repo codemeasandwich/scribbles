@@ -40,7 +40,7 @@ describe('Status Module - Edge Cases', () => {
                 execSync: jest.requireActual('child_process').execSync
             }));
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {
@@ -88,7 +88,7 @@ describe('Status Module - Edge Cases', () => {
                 execSync: jest.requireActual('child_process').execSync
             }));
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {
@@ -131,7 +131,7 @@ describe('Status Module - Edge Cases', () => {
                 execSync: jest.requireActual('child_process').execSync
             }));
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {
@@ -168,7 +168,7 @@ describe('Status Module - Edge Cases', () => {
                 execSync: jest.requireActual('child_process').execSync
             }));
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {

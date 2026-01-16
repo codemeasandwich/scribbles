@@ -16,7 +16,7 @@ describe('Loader Auto-instrumentation', () => {
 
     beforeAll(() => {
         // Require the loader FIRST - this activates node-hook
-        require('../src/loader');
+        require('../src/parsing/loader');
 
         // Now require scribbles
         scribbles = require('../index');
@@ -33,7 +33,7 @@ describe('Loader Auto-instrumentation', () => {
 
     describe('Loader module availability', () => {
         it('should export the loader module', () => {
-            const loaderPath = path.join(__dirname, '..', 'src', 'loader.js');
+            const loaderPath = path.join(__dirname, '..', 'src', 'parsing', 'loader.js');
             expect(fs.existsSync(loaderPath)).toBe(true);
         });
 

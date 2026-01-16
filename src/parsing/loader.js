@@ -1,6 +1,6 @@
 const hook = require('node-hook');
-const appDir = require('../appDir');
-const config = require('./config');
+const appDir = require('../../appDir');
+const config = require('../core/config');
 
 // Note: This function runs inside node-hook before Jest's coverage instrumentation.
 // The code IS executed (verified by fixture file tests working), but coverage

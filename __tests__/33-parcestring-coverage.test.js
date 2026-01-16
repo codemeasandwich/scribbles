@@ -13,7 +13,7 @@ describe('parceStringVals via loader', () => {
 
     beforeAll(() => {
         // Require the loader FIRST
-        require('../src/loader');
+        require('../src/parsing/loader');
 
         scribbles = require('../index');
 

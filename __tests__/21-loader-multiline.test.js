@@ -6,7 +6,7 @@
  * source location metadata.
  */
 
-const { _loadArgNames, _splitArgs } = require('../src/loader');
+const { _loadArgNames, _splitArgs } = require('../src/parsing/loader');
 
 describe('Multi-line Argument Parsing', () => {
     // Helper to simulate multi-line parsing

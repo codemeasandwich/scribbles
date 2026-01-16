@@ -4,9 +4,9 @@
 const crypto = require('crypto');
 const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 
-const config = require('./config');
-const { deepMerge } = require('./helpers');
-const { parceTracestate, hashTracestate } = require('./utils');
+const config = require('../core/config');
+const { deepMerge } = require('../utils/helpers');
+const { parceTracestate, hashTracestate } = require('../utils/utils');
 
 const tracestateLookup = new Map();
 

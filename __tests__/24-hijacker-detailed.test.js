@@ -219,12 +219,12 @@ describe('HTTP Request Hijacker', () => {
 
 describe('Hijacker function signature', () => {
     it('should export a function', () => {
-        const hijacker = require('../src/hijacker');
+        const hijacker = require('../src/tracing/hijacker');
         expect(typeof hijacker).toBe('function');
     });
 
     it('should accept scribbles and config arguments', () => {
-        const hijacker = require('../src/hijacker');
+        const hijacker = require('../src/tracing/hijacker');
 
         // Just verify it can be called (already called during module init)
         expect(() => {

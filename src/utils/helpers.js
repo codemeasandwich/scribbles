@@ -1,7 +1,7 @@
 /**
  * @file Helper utilities for scribbles logging library
  */
-const appDir = require('../appDir');
+const appDir = require('../../appDir');
 const sourceMapSupport = require('source-map-support');
 //=====================================================
 //================================================ Util

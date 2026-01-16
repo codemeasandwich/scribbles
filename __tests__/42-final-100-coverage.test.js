@@ -83,7 +83,7 @@ describe('Dev mode terminal width configuration', () => {
     // The library should respect terminal width for pretty printing
 
     let originalColumns;
-    const config = require('../src/config');
+    const config = require('../src/core/config');
 
     beforeEach(() => {
         originalColumns = process.stdout.columns;
@@ -161,7 +161,7 @@ describe('Status error propagation', () => {
 
     it('should call status module and get system metrics', async () => {
         // User scenario: Health check endpoint calls status()
-        const status = require('../src/status');
+        const status = require('../src/system/status');
         const result = await status();
 
         expect(result).toBeDefined();
@@ -177,7 +177,7 @@ describe('Loader multi-line parsing', () => {
     // User scenario: Developer writes scribbles calls spanning multiple lines
     // The loader hook needs to extract argument names across line breaks
 
-    const { _loadArgNames, _splitArgs } = require('../src/loader');
+    const { _loadArgNames, _splitArgs } = require('../src/parsing/loader');
 
     it('should be loaded and functional', () => {
         // Verify loader exports
@@ -257,7 +257,7 @@ describe('Git status global fallback', () => {
     // so git info is available without running git commands at runtime
 
     it('should use global __scribbles_gitStatus__ when git unavailable', () => {
-        const gitStatus = require('../src/getGitStatus');
+        const gitStatus = require('../src/system/getGitStatus');
         expect(gitStatus).toBeDefined();
         expect(typeof gitStatus.hash).toBe('string');
         expect(typeof gitStatus.repo).toBe('string');
@@ -267,7 +267,7 @@ describe('Git status global fallback', () => {
     it('should fall back to defaults when git unavailable and no global', () => {
         // Scenario: Running in environment without git
         // The default values are used (empty strings)
-        const gitStatus = require('../src/getGitStatus');
+        const gitStatus = require('../src/system/getGitStatus');
 
         // We're in a git repo, so we have values
         // This verifies the structure is correct
@@ -278,11 +278,11 @@ describe('Git status global fallback', () => {
 
     it('should handle re-requiring git status module', () => {
         // Clear the cache and re-require to test module loading
-        const modulePath = require.resolve('../src/getGitStatus');
+        const modulePath = require.resolve('../src/system/getGitStatus');
         const original = require.cache[modulePath];
 
         // This tests that the module can be loaded multiple times
-        const gitStatus = require('../src/getGitStatus');
+        const gitStatus = require('../src/system/getGitStatus');
         expect(gitStatus).toBeDefined();
 
         // Restore
@@ -304,7 +304,7 @@ describe('Package.json scribbles config', () => {
         // the consuming app's package.json
         //
         // For this test, we verify the config mechanism works
-        const config = require('../src/config');
+        const config = require('../src/core/config');
         expect(config).toBeDefined();
         expect(config.levels).toBeDefined();
     });

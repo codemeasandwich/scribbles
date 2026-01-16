@@ -12,7 +12,7 @@ describe('parceStringVals type handling via loader', () => {
 
     beforeAll(() => {
         // IMPORTANT: Loader must be required first
-        require('../src/loader');
+        require('../src/parsing/loader');
         scribbles = require('../index');
         // Fixture is transformed by loader
         fixture = require('./fixtures/loader-types.stub');

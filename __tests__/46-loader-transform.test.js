@@ -9,7 +9,7 @@
  * on lines 14-40 (the for loop, level detection, and getNextChar closure).
  */
 
-const { _processSource } = require('../src/loader');
+const { _processSource } = require('../src/parsing/loader');
 
 describe('Loader Source Transformation', () => {
     const mockFilename = '/project/src/app.js';

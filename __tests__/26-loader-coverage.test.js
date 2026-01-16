@@ -5,7 +5,7 @@
  * source location metadata (file, line, column, argument names).
  */
 
-const { _loadArgNames, _splitArgs } = require('../src/loader');
+const { _loadArgNames, _splitArgs } = require('../src/parsing/loader');
 
 describe('Loader Line Coverage', () => {
     // Helper to create a getChar function from a string

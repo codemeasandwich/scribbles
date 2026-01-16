@@ -11,7 +11,7 @@
 
 const http = require('http');
 const scribbles = require('../index');
-const status = require('../src/status');
+const status = require('../src/system/status');
 
 describe('Status module with real listening server', () => {
     let server;

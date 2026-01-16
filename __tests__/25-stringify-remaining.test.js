@@ -5,7 +5,7 @@
  * them to be serialized correctly for output.
  */
 
-const stringify = require('../src/stringify');
+const stringify = require('../src/formatting/stringify');
 
 describe('Stringify Edge Cases', () => {
     describe('Undefined handling (line 34)', () => {

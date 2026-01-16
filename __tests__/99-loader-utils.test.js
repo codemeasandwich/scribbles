@@ -18,7 +18,7 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-const { _loadArgNames: loadArgNames, _splitArgs: splitArgs } = require('../src/loader');
+const { _loadArgNames: loadArgNames, _splitArgs: splitArgs } = require('../src/parsing/loader');
 
 describe('⚠️ UNIT TEST EXCEPTION: Loader Utils', () => {
     /**

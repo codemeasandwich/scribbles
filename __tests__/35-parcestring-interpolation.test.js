@@ -15,7 +15,7 @@ describe('parceStringVals with interpolated values', () => {
     let fixture;
 
     beforeAll(() => {
-        require('../src/loader');
+        require('../src/parsing/loader');
         scribbles = require('../index');
         fixture = require('./fixtures/loader-interpolation.stub');
     });

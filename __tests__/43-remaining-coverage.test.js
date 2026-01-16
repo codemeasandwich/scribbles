@@ -8,7 +8,7 @@ const scribbles = require('../index');
 describe('Deep merge edge cases via config', () => {
     // User scenario: Developer passes unusual values to config merge
 
-    const { deepMerge } = require('../src/helpers');
+    const { deepMerge } = require('../src/utils/helpers');
 
     it('should handle config with undefined nested values', () => {
         // Scenario: Developer passes config with undefined
@@ -123,7 +123,7 @@ describe('Stringify edge cases via logging', () => {
     it('should handle nested objects that exceed inline limit', () => {
         // Scenario: Developer logs deeply nested object
         // Forces multi-line expansion
-        const config = require('../src/config');
+        const config = require('../src/core/config');
         const originalLimit = config.pretty.inlineCharacterLimit;
         config.pretty.inlineCharacterLimit = 5;  // Very small to force expansion
 
@@ -145,7 +145,7 @@ describe('Stringify edge cases via logging', () => {
 describe('getSource edge cases', () => {
     // User scenarios that trigger getSource edge cases
 
-    const { getSource } = require('../src/helpers');
+    const { getSource } = require('../src/utils/helpers');
 
     let output = [];
     let dataOutput = [];
@@ -214,7 +214,7 @@ describe('getSource edge cases', () => {
 describe('Loader template literal edge cases', () => {
     // User scenarios with template literals in scribbles calls
 
-    const { _loadArgNames, _splitArgs } = require('../src/loader');
+    const { _loadArgNames, _splitArgs } = require('../src/parsing/loader');
 
     it('should handle template literal followed by string argument', () => {
         // Scenario: scribbles.log(`value: ${x}`, "string")
@@ -350,7 +350,7 @@ describe('Array stringify with transform option', () => {
 
     it('should apply transform to array elements', () => {
         const output = [];
-        const config = require('../src/config');
+        const config = require('../src/core/config');
 
         // Save original
         const originalTransform = config.pretty.transform;
@@ -382,7 +382,7 @@ describe('Config pretty singleQuotes option', () => {
 
     it('should use single quotes when configured', () => {
         const output = [];
-        const config = require('../src/config');
+        const config = require('../src/core/config');
 
         const originalQuotes = config.pretty.singleQuotes;
         config.pretty.singleQuotes = true;
@@ -407,7 +407,7 @@ describe('Loader hook through fresh fixture', () => {
 
     beforeAll(() => {
         // Ensure loader is required first
-        require('../src/loader');
+        require('../src/parsing/loader');
     });
 
     beforeEach(() => {

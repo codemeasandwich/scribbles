@@ -5,8 +5,8 @@ const compile = require("string-template/compile");
 const { performance } = require('perf_hooks');
 
 const config = require('./config');
-const { getSource } = require('./helpers');
-const { defaultColorScheme, colorblindScheme, shouldEnableColors } = require('./colors');
+const { getSource } = require('../utils/helpers');
+const { defaultColorScheme, colorblindScheme, shouldEnableColors } = require('../formatting/colors');
 
 /**
  * Creates the config function for scribbles

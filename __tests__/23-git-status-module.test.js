@@ -13,13 +13,13 @@ describe('Git Status Module - Direct Testing', () => {
 
     beforeAll(() => {
         // Cache the original git values
-        originalModule = require('../src/getGitStatus');
+        originalModule = require('../src/system/getGitStatus');
     });
 
     describe('Git values structure', () => {
         it('should export an object with hash, repo, and branch', () => {
             // Use Case: Application needs git metadata for logging
-            const gitValues = require('../src/getGitStatus');
+            const gitValues = require('../src/system/getGitStatus');
 
             expect(gitValues).toBeDefined();
             expect(typeof gitValues).toBe('object');
@@ -30,7 +30,7 @@ describe('Git Status Module - Direct Testing', () => {
 
         it('should have string values for all properties', () => {
             // Use Case: All git values should be strings for logging
-            const gitValues = require('../src/getGitStatus');
+            const gitValues = require('../src/system/getGitStatus');
 
             expect(typeof gitValues.hash).toBe('string');
             expect(typeof gitValues.repo).toBe('string');
@@ -41,7 +41,7 @@ describe('Git Status Module - Direct Testing', () => {
     describe('Git hash format', () => {
         it('should have a short hash (7 characters) or empty', () => {
             // Use Case: Short hash is more readable in logs
-            const gitValues = require('../src/getGitStatus');
+            const gitValues = require('../src/system/getGitStatus');
 
             // Either empty (no git) or short hash
             expect(gitValues.hash.length <= 7 || gitValues.hash === '').toBe(true);
@@ -49,7 +49,7 @@ describe('Git Status Module - Direct Testing', () => {
 
         it('should be alphanumeric if present', () => {
             // Use Case: Hash should only contain valid hex characters
-            const gitValues = require('../src/getGitStatus');
+            const gitValues = require('../src/system/getGitStatus');
 
             if (gitValues.hash) {
                 expect(/^[a-f0-9]+$/i.test(gitValues.hash)).toBe(true);

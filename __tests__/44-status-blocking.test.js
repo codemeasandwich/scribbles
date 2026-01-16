@@ -50,7 +50,7 @@ describe('Status Module - Error Propagation', () => {
                 };
             });
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {
@@ -115,7 +115,7 @@ describe('Status Module - Event Loop Blocking Detection', () => {
                 execSync: jest.requireActual('child_process').execSync
             }));
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {
@@ -189,7 +189,7 @@ describe('Status Module - Event Loop Blocking Detection', () => {
                 execSync: jest.requireActual('child_process').execSync
             }));
 
-            status = require('../src/status');
+            status = require('../src/system/status');
         });
 
         afterAll(() => {

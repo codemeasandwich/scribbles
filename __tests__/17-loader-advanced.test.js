@@ -16,7 +16,7 @@ describe('Loader Advanced Transformation', () => {
 
     beforeAll(() => {
         // Require the loader to activate node-hook (may already be active)
-        require('../src/loader');
+        require('../src/parsing/loader');
 
         // Now require the advanced fixture - it gets transformed
         fixture = require('./fixtures/loader-advanced.stub');

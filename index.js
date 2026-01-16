@@ -1,21 +1,21 @@
 /**
  * @file Scribbles - A structured logging library for Node.js with tracing support
  */
-require('./src/checkNodeVer')
+require('./src/utils/checkNodeVer')
 require('source-map-support').install()
 var sVer = require('./package.json').version;
 
 const os = require('os');
 const fs = require("fs");
 
-const config = require('./src/config');
-const hijacker = require('./src/hijacker');
-const gitValues = require('./src/getGitStatus');
-const { createScribble } = require('./src/scribble');
-const { myNamespace } = require('./src/namespace');
-const { createTrace } = require('./src/trace');
-const { createMiddleware } = require('./src/middleware');
-const { createConfig } = require('./src/scribblesConfig');
+const config = require('./src/core/config');
+const hijacker = require('./src/tracing/hijacker');
+const gitValues = require('./src/system/getGitStatus');
+const { createScribble } = require('./src/core/scribble');
+const { myNamespace } = require('./src/tracing/namespace');
+const { createTrace } = require('./src/tracing/trace');
+const { createMiddleware } = require('./src/tracing/middleware');
+const { createConfig } = require('./src/core/scribblesConfig');
 
 let packageJson_scribbles = {}
 

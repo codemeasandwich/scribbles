@@ -4,13 +4,13 @@
 const moment = require('moment');
 
 const config = require('./config');
-const args2keys = require('./args2keys');
-const { getSource } = require('./helpers');
-const stringify = require('./stringify');
-const status = require('./status');
-const { myNamespace } = require('./namespace');
-const { parceStringVals } = require('./parceStringVals');
-const { colorize } = require('./colors');
+const args2keys = require('../parsing/args2keys');
+const { getSource } = require('../utils/helpers');
+const stringify = require('../formatting/stringify');
+const status = require('../system/status');
+const { myNamespace } = require('../tracing/namespace');
+const { parceStringVals } = require('../parsing/parceStringVals');
+const { colorize } = require('../formatting/colors');
 
 const notUsed = { not: 'used' }
 

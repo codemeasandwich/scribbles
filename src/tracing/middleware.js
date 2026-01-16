@@ -1,9 +1,9 @@
 /**
  * @file Express middleware for distributed tracing
  */
-const config = require('./config');
-const { isValidRegex, stringToRegex } = require('./regexUtils');
-const { isTracestateHash } = require('./utils');
+const config = require('../core/config');
+const { isValidRegex, stringToRegex } = require('../utils/regexUtils');
+const { isTracestateHash } = require('../utils/utils');
 
 /**
  * Creates middleware with injected trace function
