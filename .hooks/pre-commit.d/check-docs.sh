@@ -85,7 +85,7 @@ check_file_documented() {
 }
 
 # Get list of staged files (added or modified)
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=AM 2>/dev/null || true)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=AMR 2>/dev/null || true)
 
 # Exit early if no staged files
 if [ -z "$STAGED_FILES" ]; then
