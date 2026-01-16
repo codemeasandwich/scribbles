@@ -1,3 +1,6 @@
+/**
+ * @file Default configuration values for scribbles
+ */
 module.exports = {
   mode: process.env.NODE_ENV || 'dev',
   logLevel:process.env.LOG_LEVEL || "debug",
@@ -7,5 +10,6 @@ module.exports = {
   hijack: true,
   //vendor:defaultVendor, // this is the name of the project
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
-  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`
+  format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`,
+  edgeLookupHash: false
 }

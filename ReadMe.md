@@ -140,6 +140,10 @@ There is a `config` that takes a configuration object.
   * `"console"` - Attach log functions to the console object (replaces console.log, console.error, etc.)
   * `"global"` - Attach log functions to the global object
   * `object` - Attach log functions to a custom object
+* **edgeLookupHash** [boolean] - *default: `false`*
+  * When enabled, replaces `tracestate` headers with a short hash for reduced bandwidth
+  * The full tracestate is stored in memory and restored on incoming requests
+  * See [Edge Lookup Hash](#edge-lookup-hash) for details
 
 ---
 
@@ -728,6 +732,52 @@ scribbles.config({
 ```
 
 The array form checks headers in order - the first matching header is used.
+
+---
+
+### Edge Lookup Hash
+
+When tracing across many microservices, the `tracestate` header can grow large (up to 512 bytes with 32 vendors per W3C spec). This can cause performance issues, especially at network edges where bandwidth matters.
+
+The **edge lookup hash** feature lets you replace the full `tracestate` with a short hash at your infrastructure edge. The original tracestate is stored in an in-memory lookup table and can be retrieved by downstream services.
+
+```js
+scribbles.config({
+  edgeLookupHash: true
+});
+```
+
+**How it works:**
+
+1. When `edgeLookupHash` is enabled, outgoing requests will have their `tracestate` header replaced with a short hash (e.g., `h:a1b2c3d4e5f67890`)
+2. The full tracestate is stored in memory, keyed by the hash
+3. When an incoming request has a hash-format tracestate, scribbles automatically looks up and restores the original value
+
+**Example flow:**
+
+```
+┌─────────────────┐     tracestate: h:abc123...     ┌─────────────────┐
+│  Edge Gateway   │ ─────────────────────────────► │  Internal Svc   │
+│  (scribbles)    │                                 │  (scribbles)    │
+└─────────────────┘                                 └─────────────────┘
+        │                                                   │
+        │ stores full tracestate                           │ looks up hash
+        │ in memory lookup                                 │ restores full
+        ▼                                                   ▼
+  h:abc123... → "vendor1=val1,vendor2=val2,..."    gets original tracestate
+```
+
+**When to use:**
+
+- High-traffic edge proxies where header size impacts performance
+- Internal microservices that don't need to see all vendor hops
+- Environments where you control both the edge and internal services
+
+**Limitations:**
+
+- Uses in-memory storage (not shared across process instances)
+- Hash lookup only works within the same process that created it
+- For distributed deployments, consider using Redis or another shared store
 
 ---
 

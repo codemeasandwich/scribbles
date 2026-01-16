@@ -3,6 +3,7 @@
  */
 const config = require('./config');
 const { isValidRegex, stringToRegex } = require('./regexUtils');
+const { isTracestateHash } = require('./utils');
 
 /**
  * Creates middleware with injected trace function
@@ -89,9 +90,18 @@ function createMiddleware(trace) {
       if (!spanLabel && ip) {
         spanLabel = ip
       }
+
+      let resolvedTracestate = headers.tracestate;
+      if (config.edgeLookupHash && isTracestateHash(headers.tracestate)) {
+        const lookedUp = trace.lookupTracestate(headers.tracestate);
+        if (lookedUp) {
+          resolvedTracestate = lookedUp;
+        }
+      }
+
       trace({
         traceId: headers.traceparent && headers.traceparent.split('-')[1],
-        tracestate: headers.tracestate,
+        tracestate: resolvedTracestate,
         headers: headersOut,
         spanLabel,
         url: req.url,

@@ -6,7 +6,9 @@ const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 
 const config = require('./config');
 const { deepMerge } = require('./helpers');
-const { parceTracestate } = require('./utils');
+const { parceTracestate, hashTracestate } = require('./utils');
+
+const tracestateLookup = new Map();
 
 const regxTraceparent = /[\d\w]{2}-[\d\w]{32}-[\d\w]{16}-[\d\w]{02}/g
 
@@ -92,16 +94,36 @@ function createTrace(deps) {
 
     const { traceId, spanId, span64, tracestate, version, flag, headers } = correlaterValue('traceVals') || {};
 
+    let tracestateValue = (tracestate || []).filter(span => config.vendor !== span.key)
+      .reduce((arr, { key, value }) => {
+        arr.push(`${key}=${value}`);
+        return arr;
+      }, [`${config.vendor}=${span64}`]).slice(0, 32);
+
+    if (config.edgeLookupHash && tracestateValue.length > 0) {
+      const fullTracestate = tracestateValue.join();
+      const hash = 'h:' + hashTracestate(tracestate || []);
+      tracestateLookup.set(hash, fullTracestate);
+      tracestateValue = hash;
+    } else {
+      tracestateValue = tracestateValue.join();
+    }
+
     return deepMerge(Object.assign({
       "x-git-hash": gitValues && gitValues.hash || undefined,
       traceparent: `${version || '00'}-${traceId}-${spanId}-${flag || '01'}`,
-      tracestate: (tracestate || []).filter(span => config.vendor !== span.key)
-        .reduce((arr, { key, value }) => {
-          arr.push(`${key}=${value}`);
-          return arr;
-        }, [`${config.vendor}=${span64}`]).slice(0, 32).join()
+      tracestate: tracestateValue
     }, headers || {}), customHeader)
   } // END traceContext
+
+  /**
+   * Looks up the original tracestate from a hash
+   * @param {string} hash - The hash to look up
+   * @returns {string|undefined} The original tracestate or undefined
+   */
+  trace.lookupTracestate = function(hash) {
+    return tracestateLookup.get(hash);
+  } // END lookupTracestate
 
   return trace;
 }
