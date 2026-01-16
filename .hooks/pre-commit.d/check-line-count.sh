@@ -31,7 +31,7 @@ while IFS= read -r file; do
         FAILED_FILES+=("$file ($lines lines)")
         ERROR=1
     fi
-done < <(git diff --cached --name-only --diff-filter=ACM | grep '\.js$')
+done < <(git diff --cached --name-only --diff-filter=AMR | grep '\.js$')
 
 if [ $ERROR -eq 1 ]; then
     echo ""

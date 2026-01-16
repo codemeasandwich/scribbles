@@ -22,7 +22,7 @@ if [ ! -f "$VALIDATOR" ]; then
 fi
 
 # Get list of staged JS files (added or modified)
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=AM 2>/dev/null | grep '\.js$' || true)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=AMR 2>/dev/null | grep '\.js$' || true)
 
 # Exit early if no JS files staged
 if [ -z "$STAGED_FILES" ]; then

@@ -258,13 +258,13 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
     git tag -d "$TAG"
     echo "   ✅ Local tag deleted"
     
-    # Rebuild the client bundle (validation only)
-    echo "   🔨 Rebuilding client bundle (validation)..."
-    npx esbuild client/index.js --bundle --minify --sourcemap --outfile=dist/api-ape.min.js
-    echo "   ✅ Client bundle rebuilt"
-    
+    # Rebuild the bundle (validation only)
+    echo "   🔨 Rebuilding bundle (validation)..."
+    npx esbuild index.js --bundle --minify --sourcemap --platform=node --external:../../package.json --outfile=dist/scribbles.js
+    echo "   ✅ Bundle rebuilt"
+
     # Cleanup: Remove validation build files (CI builds its own)
-    rm -f dist/api-ape.min.js dist/api-ape.min.js.map
+    rm -f dist/scribbles.js dist/scribbles.js.map
     echo "   🧹 Validation build files cleaned up"
     
     TAG_EXISTS=false
@@ -424,7 +424,7 @@ echo "   Changelog generated!"
 echo "🚀 Creating GitHub release..."
 
 REPO_OWNER="codemeasandwich"
-REPO_NAME="api-ape"
+REPO_NAME="scribbles"
 
 # Try gh CLI first, fall back to curl
 if command -v gh &> /dev/null; then

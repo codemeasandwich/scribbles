@@ -27,7 +27,7 @@ jobs:
         run: npm test
 
       - name: Build browser bundle
-        run: npx esbuild index.js --bundle --minify --sourcemap --outfile=dist/scribbles.js
+        run: npx esbuild index.js --bundle --minify --sourcemap --platform=node --external:../../package.json --outfile=dist/scribbles.js
 
       - name: Publish to npm with provenance
         run: npm publish --provenance --access public

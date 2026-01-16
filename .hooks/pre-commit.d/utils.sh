@@ -38,5 +38,5 @@ array_contains() {
 
 # Get list of staged files (added or modified)
 get_staged_files() {
-    git diff --cached --name-only --diff-filter=AM 2>/dev/null || true
+    git diff --cached --name-only --diff-filter=AMR 2>/dev/null || true
 }

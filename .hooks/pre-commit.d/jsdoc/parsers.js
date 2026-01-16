@@ -29,11 +29,17 @@ function extractJSDocBefore(lines, endLine) {
 function parseParams(jsdoc) {
   const params = [];
   // Require type annotation in braces: @param {type} name
-  const paramRegex = /@param\s+\{[^}]*\}\s+(\[?\w+\]?)/g;
+  // Also handle destructured params documented as @param {type} options.prop
+  // Match: [optional], word, or word.nested
+  const paramRegex = /@param\s+\{[^}]*\}\s+(\[?[\w.]+\]?)/g;
   let match;
   while ((match = paramRegex.exec(jsdoc)) !== null) {
     // Remove brackets for optional params [param] -> param
-    params.push(match[1].replace(/^\[|\]$/g, ""));
+    // Extract base param name (before any dot for nested props)
+    const paramName = match[1].replace(/^\[|\]$/g, "").split(".")[0];
+    if (!params.includes(paramName)) {
+      params.push(paramName);
+    }
   }
   return params;
 }

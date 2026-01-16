@@ -1,6 +1,6 @@
 {
   "name": "scribbles",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Scribbles is a log and tracing lib for Node",
   "files": [
     "dist/",
@@ -51,9 +51,18 @@
     ]
   },
   "nyc": {
-    "include": ["index.js", "src/**/*.js"],
-    "exclude": ["__tests__/**", "dist/**"],
-    "reporter": ["text", "lcov"],
+    "include": [
+      "index.js",
+      "src/**/*.js"
+    ],
+    "exclude": [
+      "__tests__/**",
+      "dist/**"
+    ],
+    "reporter": [
+      "text",
+      "lcov"
+    ],
     "report-dir": ".nyc_output"
   }
 }

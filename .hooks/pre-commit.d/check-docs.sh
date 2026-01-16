@@ -43,11 +43,17 @@ array_contains() {
     return 1
 }
 
+# Function to escape special regex characters in a string
+escape_regex() {
+    printf '%s' "$1" | sed 's/[.[\*^$()+?{|\\]/\\&/g'
+}
+
 # Function to check if file is documented in files.md
 check_file_documented() {
     local file="$1"
     local files_md="$2"
     local filename=$(get_filename "$file")
+    local escaped_filename=$(escape_regex "$filename")
 
     if [ ! -f "$files_md" ]; then
         return 1
@@ -60,20 +66,20 @@ check_file_documented() {
 
     # For directories, check if mentioned in Directory Structure
     if [ -d "$file" ]; then
-        if grep -qE "^\s*(├──|└──|│)?\s*${filename}/?(\s|$|\`)" "$files_md" 2>/dev/null; then
+        if grep -qE "^\s*(├──|└──|│)?\s*${escaped_filename}/?(\s|$|\`)" "$files_md" 2>/dev/null; then
             in_dir_structure=true
         fi
         # Also check for ### `dirname/` pattern in Files section
-        if grep -qE "^###\s+\`?${filename}/?\`?" "$files_md" 2>/dev/null; then
+        if grep -qE "^###\s+\`?${escaped_filename}/?\`?" "$files_md" 2>/dev/null; then
             in_files_section=true
         fi
     else
         # For files, check Directory Structure
-        if grep -qE "(├──|└──|│)?\s*${filename}(\s|$|\`)" "$files_md" 2>/dev/null; then
+        if grep -qE "(├──|└──|│)?\s*${escaped_filename}(\s|$|\`)" "$files_md" 2>/dev/null; then
             in_dir_structure=true
         fi
         # Check Files section for ### `filename` or ### filename
-        if grep -qE "^###\s+\`?${filename}\`?" "$files_md" 2>/dev/null; then
+        if grep -qE "^###\s+\`?${escaped_filename}\`?" "$files_md" 2>/dev/null; then
             in_files_section=true
         fi
     fi
