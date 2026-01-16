@@ -60,6 +60,50 @@ scribbles.log("hello world")
 scribbles[logLevel](message, [value, [error]])
 ```
 
+### Source Location Override with `.at()`
+
+Each log level function has an `.at()` method that allows you to override the source location. This is useful when building logging wrappers or libraries:
+
+```js
+// Override file and line number in log output
+scribbles.log.at({ file: 'my-module.js', line: 42, col: 0, args: [] }, 'Custom location');
+
+// All log levels support .at()
+scribbles.error.at(from, 'Error message', errorObject);
+scribbles.warn.at(from, 'Warning message');
+scribbles.info.at(from, 'Info message', { data: 123 });
+```
+
+The `from` object requires:
+- `file`: Source file name
+- `line`: Line number
+- `col`: Column number (can be 0)
+- `args`: Array for template argument names (use `[]` for basic usage)
+
+---
+
+## TypeScript Support
+
+Scribbles includes TypeScript definitions (`index.d.ts`). Key interfaces available:
+
+- `ScribblesConfig` - Configuration options
+- `LogEntry` - Structured log entry returned by log functions
+- `TraceOptions` - Options for `scribbles.trace()`
+- `LogFunction` - Type for log level functions
+
+```ts
+import scribbles, { LogEntry, ScribblesConfig } from 'scribbles';
+
+const config: Partial<ScribblesConfig> = {
+    logLevel: 'info',
+    dataOut: (entry: LogEntry) => console.log(entry)
+};
+
+scribbles.config(config);
+```
+
+---
+
 ## How to customise
 
 There is a `config` that takes a configuration object.
@@ -70,6 +114,9 @@ There is a `config` that takes a configuration object.
   * A callback to receive an object representing the log entry
 * **stringify**  [function]
   * A function used in stdOut to parsing for values into a string
+* **hijack** [boolean] - *default: `true`*
+  * Enable or disable automatic HTTP/HTTPS request interception for trace header injection
+  * Set to `false` to disable automatic header injection into outgoing requests
 * **mode** [string] - *default: 'dev'*
   * Can use NODE_ENV from environment variables
 * **format** [string] - *defaults: "{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}"*
@@ -114,7 +161,7 @@ There is a `config` that takes a configuration object.
 * **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
-  * **Reserved names** (cannot be used as level names): `config`, `trace`, `middleware`, `status`, `timer`, `timerEnd`
+  * **Reserved names** (cannot be used as level names): `config`, `trace`, `middleware`, `status`, `timer`, `timerEnd`, `group`
 * **headers** [string/array/null]
   * **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
   * `string` of a header name to forward
@@ -358,8 +405,11 @@ scribbles.log("hello world")
       hash:"3d608bf"
    },
    trace:{
+      traceId: "...",
+      spanId: "...",
+      spanLabel: "...",
       ...
-   }
+   },
    info:{
       time:2022-06-27T16:24:06.473Z,
       mode:"local",
@@ -369,10 +419,17 @@ scribbles.log("hello world")
    },
    context:{
       fileName:"index.js",
-      lineNumber:174
+      lineNumber:174,
+      method:"myFunction",    // The calling function name
+      groupLevel:0,           // Nesting depth when inside groups
+      groupLabel:""           // Labels of parent groups
    },
    input:{
-    message: "hello world"
+      message: "hello world",
+      value: undefined,       // The value argument if provided
+      stackTrace: undefined,  // Error stack trace if Error was passed
+      originalMessage: undefined, // Original error message when logging with separate message
+      from: ["at Object.<anonymous> (index.js:174:1)", ...] // Full call stack
    },
 }*/
 ```
@@ -663,6 +720,7 @@ scribbles.config({
 Scribbles respects standard environment variables:
 - `NO_COLOR` - Disables all colors (https://no-color.org/)
 - `FORCE_COLOR` - Forces colors even when not a TTY
+- `CI` - Colors are automatically enabled in CI environments (when in dev mode)
 
 ### Available Colors
 
@@ -854,6 +912,11 @@ app.get('/', function (req, res){
 
 }) // END app.get '/'
 ```
+
+The `trace.headers()` function returns an object containing:
+- `traceparent` - W3C trace context parent header
+- `tracestate` - W3C trace context state header
+- `x-git-hash` - The current git commit hash (automatically included)
 
 ---
 

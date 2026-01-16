@@ -33,7 +33,7 @@ Parses arguments and converts them to key-value pairs for logging.
 Validates Node.js version compatibility.
 
 ### `colors.js`
-ANSI color utilities for terminal output, including color schemes and colorblind accessibility.
+ANSI color utilities for terminal output, including color schemes, colorblind accessibility mode, and auto-detection (respects `NO_COLOR`, `FORCE_COLOR`, and `CI` environment variables).
 
 ### `config.js`
 Default configuration values for scribbles.
