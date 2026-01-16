@@ -2,6 +2,11 @@
   "name": "scribbles",
   "version": "1.6.0",
   "description": "Scribbles is a log and tracing lib for Node",
+  "files": [
+    "dist/",
+    "index.d.ts",
+    "LICENSE"
+  ],
   "main": "dist/scribbles.js",
   "scripts": {
     "prepare": "rm -rf .git/hooks/* && cp -R .hooks/* .git/hooks/ && chmod +x .git/hooks/* .git/hooks/pre-commit.d/* 2>/dev/null || true",
