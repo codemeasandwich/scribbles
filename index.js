@@ -686,6 +686,8 @@ function stringToRegex(s) {
   return m ? new RegExp(m[2], m[3]) : new RegExp(s);
 }
 
-hijacker(scribbles, config)
+if (config.hijack !== false) {
+  hijacker(scribbles, config)
+}
 
 module.exports = scribbles;
