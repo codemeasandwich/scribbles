@@ -463,6 +463,8 @@ myRepo:local:master [ ] 2022-06-27T13:04:52.875 <timerEnd> app.js:22 Yo:done! (+
 
 ## How to trace logs
 
+> **Note:** `scribbles.trace()` is for **distributed tracing** (correlating logs across microservices), not for `console.trace()`-style stack trace output. For stack traces, pass an Error object to any log function (e.g., `scribbles.log("msg", new Error())`) and use the `{stackTrace}` format token. The `dataOut` callback also receives a `from` property with the full call stack.
+
 When trying to debug a problem with logs that are intertwined. A stacktrace will give you limited information. You can see where the Error occurred and a message. However you cannot see the values as it flow through your system.
 
 Using the trace system. Each log entry will be able to be connected, as it flows through your system.
