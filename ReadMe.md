@@ -1,6 +1,10 @@
-# Scribbles
+# 🐨 Scribbles
 
-**scribbles** a log and tracing lib for Node [![npm version](https://badge.fury.io/js/scribbles.svg)](https://www.npmjs.com/package/scribbles)
+[![npm version](https://img.shields.io/npm/v/scribbles.svg)](https://www.npmjs.com/package/scribbles)
+[![GitHub issues](https://img.shields.io/github/issues/codemeasandwich/scribbles)](https://github.com/codemeasandwich/scribbles/issues)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](server/README.md#zero-dependency-websocket)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/scribbles)](https://bundlephobia.com/package/scribbles)
+[![license](https://img.shields.io/npm/l/scribbles.svg)](https://github.com/codemeasandwich/scribbles/blob/main/LICENSE)
 
 ---
 
