@@ -475,20 +475,18 @@ Via **package.js**
 
 ---
 
-## Using TypeScript in a bundle?
+## Using transpiled or bundled code?
 
-To get accurate file & line references when transpiling your code.
-You will need to enable inlining sourceMaps.
-There are two steps you need to add.
+To get accurate file & line references when transpiling your code, you will need to generate source maps as part of your build.
 
-1. **Generate source-map as part of the build**
+1. **Generate source maps as part of the build**
     * In your `tsconfig.json` add `"sourceMap": true` under "*compilerOptions*"
+    * For esbuild, add `--sourcemap` flag
+    * For webpack, set `devtool: 'source-map'` in your config
 
-2. **Enable sourceMap support in Node**
-    * **Node v12.12+** : can just add the ` --enable-source-maps ` flag to the node command
-
-      OR
-    * **Node older** : Will need to install **[NPM->source-map-support](https://www.npmjs.com/package/source-map-support)** and add `require('source-map-support').install()` to the top for you service
+2. **Source map support in Node**
+    * **Scribbles automatically** installs source-map-support, so transpiled code will resolve to original file locations out of the box
+    * **Alternatively for Node v12.12+** : you can add the `--enable-source-maps` flag to the node command for native support
 
 ---
 
