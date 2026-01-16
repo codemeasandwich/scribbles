@@ -121,6 +121,7 @@ interface LogInfo {
 interface ContextInfo {
     fileName: string;
     lineNumber: number;
+    method?: string;
 }
 
 /**

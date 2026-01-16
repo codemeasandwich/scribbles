@@ -110,6 +110,7 @@ function createScribble(deps) {
       context: {
         fileName: from.file,
         lineNumber: from.line,
+        method: from.type,
       },
       input: {
         message: notUsed === message ? undefined : message,

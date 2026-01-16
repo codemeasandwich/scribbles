@@ -91,6 +91,7 @@ There is a `config` that takes a configuration object.
   * context:
     * `fileName`: The file name
     * `lineNumber`: The line in the file
+    * `method`: The calling method or function name
   * input:  
     * `message`: Message to log
     * `value`: Values to log
