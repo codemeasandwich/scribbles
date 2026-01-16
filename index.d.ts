@@ -129,6 +129,7 @@ interface InputInfo {
     originalMessage?: string;
     value?: unknown;
     stackTrace?: string[];
+    from?: string[];
 }
 
 /**
