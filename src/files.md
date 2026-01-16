@@ -6,6 +6,7 @@
 src/
 ├── args2keys.js
 ├── checkNodeVer.js
+├── colors.js
 ├── config.js
 ├── getGitStatus.js
 ├── helpers.js
@@ -30,6 +31,9 @@ Parses arguments and converts them to key-value pairs for logging.
 
 ### `checkNodeVer.js`
 Validates Node.js version compatibility.
+
+### `colors.js`
+ANSI color utilities for terminal output, including color schemes and colorblind accessibility.
 
 ### `config.js`
 Default configuration values for scribbles.

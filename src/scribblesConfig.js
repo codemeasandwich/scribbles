@@ -6,6 +6,7 @@ const { performance } = require('perf_hooks');
 
 const config = require('./config');
 const { getSource } = require('./helpers');
+const { defaultColorScheme, colorblindScheme, shouldEnableColors } = require('./colors');
 
 /**
  * Creates the config function for scribbles
@@ -45,6 +46,32 @@ function createConfig(deps) {
 
     Object.assign(config, opts);
     Object.assign(config.pretty, defaultPretty, opts.pretty || {});
+
+    // Setup colors configuration
+    if (config.colors === undefined) {
+      // Dev mode: colors enabled by default (if TTY supports it)
+      // Prod mode: colors disabled by default
+      if (config.mode.toLowerCase() === 'dev') {
+        config.colors = shouldEnableColors();
+      } else {
+        config.colors = false;
+      }
+    }
+
+    // Setup color scheme
+    if (config.colors) {
+      if (!config.colorScheme) {
+        config.colorScheme = config.colorblindMode
+          ? { ...colorblindScheme }
+          : { ...defaultColorScheme };
+      } else {
+        // Merge user colorScheme with defaults
+        const baseScheme = config.colorblindMode
+          ? colorblindScheme
+          : defaultColorScheme;
+        config.colorScheme = { ...baseScheme, ...config.colorScheme };
+      }
+    }
 
     // Setup pretty printing
     config.pretty = config.pretty || {}

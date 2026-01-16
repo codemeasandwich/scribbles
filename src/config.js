@@ -11,5 +11,9 @@ module.exports = {
   //vendor:defaultVendor, // this is the name of the project
   time:'YYYY-MM-DDTHH:mm:ss.SSS',
   format:`{repo}:{mode}:{branch} [{spanLabel} {spanId}] {time} #{hash} <{logLevel}> {fileName}:{lineNumber} {message} {value} {stackTrace}`,
-  edgeLookupHash: false
+  edgeLookupHash: false,
+  // Color configuration
+  colors: undefined,      // Auto-detect based on mode and TTY
+  colorScheme: undefined, // Uses defaultColorScheme if not specified
+  colorblindMode: false   // When true, uses colorblindScheme
 }

@@ -10,6 +10,7 @@ const stringify = require('./stringify');
 const status = require('./status');
 const { myNamespace } = require('./namespace');
 const { parceStringVals } = require('./parceStringVals');
+const { colorize } = require('./colors');
 
 const notUsed = { not: 'used' }
 
@@ -195,12 +196,22 @@ function createScribble(deps) {
           }
         }
 
-        return groupPrefix + config.__compile(Object.assign(all, {
+        let formattedOutput = groupPrefix + config.__compile(Object.assign(all, {
           time,
           value: outputValue,
           message: outputMessage,
           stackTrace: outputStackTrace
         }))
+
+        // Apply colors if enabled
+        if (config.colors && config.colorScheme) {
+          const levelColor = config.colorScheme[level];
+          if (levelColor) {
+            formattedOutput = colorize(formattedOutput, levelColor);
+          }
+        }
+
+        return formattedOutput;
       }
     } // END body
 

@@ -144,6 +144,16 @@ There is a `config` that takes a configuration object.
   * When enabled, replaces `tracestate` headers with a short hash for reduced bandwidth
   * The full tracestate is stored in memory and restored on incoming requests
   * See [Edge Lookup Hash](#edge-lookup-hash) for details
+* **colors** [boolean/undefined] - *default: auto-detect*
+  * Enable or disable colored terminal output
+  * When `undefined`: enabled in dev mode (if TTY), disabled in production
+  * Respects `NO_COLOR` and `FORCE_COLOR` environment variables
+* **colorScheme** [object]
+  * Custom color mapping for log levels
+  * Available colors: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `gray`, `brightRed`, `brightGreen`, `brightYellow`, `brightBlue`, `brightMagenta`, `brightCyan`, `dim`, `bold`
+  * Default scheme: `{ error: 'red', warn: 'yellow', log: 'cyan', info: 'green', debug: 'gray' }`
+* **colorblindMode** [boolean] - *default: `false`*
+  * Use colorblind-friendly color scheme with higher contrast and distinct brightness levels
 
 ---
 
@@ -601,6 +611,64 @@ Output:
 ⎜ myRepo:local:master [ ] ... <log> Validating token
 ⎣
 ```
+
+---
+
+## Colored Output
+
+Scribbles supports colored terminal output to make logs easier to read. Colors are automatically enabled in development mode and disabled in production.
+
+### Basic Usage
+
+Colors work automatically - just use scribbles as normal:
+
+```js
+scribbles.error('Something went wrong')  // Red
+scribbles.warn('Be careful')             // Yellow
+scribbles.log('Processing...')           // Cyan
+scribbles.info('Connected')              // Green
+scribbles.debug('Variable: x')           // Gray
+```
+
+### Configuration
+
+```js
+// Force enable colors
+scribbles.config({ colors: true })
+
+// Force disable colors
+scribbles.config({ colors: false })
+
+// Custom color scheme
+scribbles.config({
+  colors: true,
+  colorScheme: {
+    error: 'brightRed',
+    warn: 'brightYellow',
+    log: 'blue',
+    info: 'cyan',
+    debug: 'dim'
+  }
+})
+
+// Colorblind-friendly mode
+scribbles.config({
+  colors: true,
+  colorblindMode: true
+})
+```
+
+### Environment Variables
+
+Scribbles respects standard environment variables:
+- `NO_COLOR` - Disables all colors (https://no-color.org/)
+- `FORCE_COLOR` - Forces colors even when not a TTY
+
+### Available Colors
+
+Standard: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `gray`
+Bright: `brightRed`, `brightGreen`, `brightYellow`, `brightBlue`, `brightMagenta`, `brightCyan`
+Styles: `bold`, `dim`, `underline`
 
 ---
 

@@ -11,7 +11,7 @@
     "test:subprocess": "nyc --silent node __tests__/subprocess/run-all.js",
     "test:full-coverage": "jest --coverage --no-cache && npm run test:subprocess && nyc report --reporter=text",
     "release": "bash scripts/publish.sh",
-    "prepublishOnly": "npx esbuild index.js --bundle --minify --sourcemap --outfile=dist/scribbles.js"
+    "prepublishOnly": "npx esbuild index.js --bundle --minify --sourcemap --platform=node --external:../../package.json --outfile=dist/scribbles.js"
   },
   "repository": {
     "type": "git",
