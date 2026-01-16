@@ -106,9 +106,10 @@ There is a `config` that takes a configuration object.
 * **logLevel** [string] - *defaults: "debug"*
   * Report on this level and higher
   * Can use LOG_LEVEL from environment variables
-* **levels** [array] - *defaults: `["error", "warn", "status", "log", "timer", "info", "debug"]`*
+* **levels** [array] - *defaults: `["error", "warn", "log", "info", "debug"]`*
   * Messages will be filtered from the `logLevel` to the start of the array
   * These log levels will also be available as functions on scribbles
+  * **Reserved names** (cannot be used as level names): `config`, `trace`, `middleware`, `status`, `timer`, `timerEnd`
 * **headers** [string/array/null]
   * **activated when using [scribbles.middleware...](#tracing-across-your-micro-services)**
   * `string` of a header name to forward

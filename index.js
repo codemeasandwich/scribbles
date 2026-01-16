@@ -88,6 +88,10 @@ scribbles.config = scribblesConfig
 
 // Add config to reserved names since it was just added
 resirvedFnNames.push('config');
+// Add special logging functions to reserved names (issue #24)
+resirvedFnNames.push('status');
+resirvedFnNames.push('timer');
+resirvedFnNames.push('timerEnd');
 
 scribbles.config(packageJson_scribbles)
 
