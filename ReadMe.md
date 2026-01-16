@@ -702,6 +702,36 @@ app.get('/', function (req, res){
 
 ---
 
+## Architecture
+
+Scribbles uses a modular architecture with the main entry point (`index.js`) serving as a thin orchestration layer that wires together specialized modules in the `src/` directory.
+
+### Module Overview
+
+| Module | Purpose |
+|--------|---------|
+| `scribble.js` | Core logging function - creates structured log entries |
+| `scribblesConfig.js` | Configuration and log level setup |
+| `trace.js` | Distributed tracing with W3C trace-context support |
+| `middleware.js` | Express middleware for trace context propagation |
+| `namespace.js` | CLS namespace for async trace correlation |
+| `hijacker.js` | HTTP/HTTPS request interception for header injection |
+| `stringify.js` | Custom JSON stringification with pretty printing |
+| `status.js` | System status collection (CPU, memory, process) |
+| `helpers.js` | Utility functions (deepMerge, getSource) |
+| `args2keys.js` | Argument parsing for log functions |
+| `parceStringVals.js` | Template string parsing with type annotations |
+| `regexUtils.js` | Regex validation and conversion |
+| `loader.js` | Code instrumentation loader |
+| `config.js` | Default configuration values |
+| `getGitStatus.js` | Git repository information retrieval |
+| `checkNodeVer.js` | Node.js version validation |
+| `utils.js` | Trace state parsing utilities |
+
+See [src/files.md](src/files.md) for detailed module documentation.
+
+---
+
 **small print:**
 
 **MIT** - If you use this module(or part), credit it in the readme of your project and failing to do so constitutes an irritating social faux pas. Besides this, do what you want with this code but don't blame me if it does not work.  If you find any problems with this module, [open issue on Github](https://github.com/codemeasandwich/scribbles/issues). However reading the Source Code is suggested for experience JavaScript and node engineer's and may be unsuitable for overly sensitive persons with low self-esteem or no sense of humour. Unless the word tnetennba has been used in it's correct context somewhere other than in this warning, it does not have any legal or grammatical use and may be ignored. No animals were harmed in the making of this module, although the yorkshire terrier next door is living on borrowed time, let me tell you. Those of you with an overwhelming fear of the unknown will be gratified to learn that there is no hidden message revealed by reading this warning backwards, I think.
