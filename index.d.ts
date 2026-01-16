@@ -80,6 +80,10 @@ interface ScribblesConfig {
     pretty?: PrettyOptions;
     /** Global object to attach log functions to ("console", "global", or custom object) */
     global?: "console" | "global" | { [key: string]: unknown };
+    /** Enable colored log output (default: true in dev mode) */
+    colors?: boolean;
+    /** Use colorblind-friendly color scheme (default: false) */
+    colorblindMode?: boolean;
 }
 
 // =============================================================================
