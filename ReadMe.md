@@ -11,7 +11,7 @@
   * All logs with [`.trace(`](#trace-function-signature) will be **automatically** tagged, no matter where in your app it is.
   * use `traceTrigger` to filter a set of logs to only when there is a threshold is met or exceeded
   * Can trace incoming requests with the [w3c trace-context](https://www.w3.org/TR/trace-context/) headers
-  * scribbles will attempt to intercept all outgoing requests and inject the headers :sunglasses:
+  * With `headers` or `headersMapping` configured, scribbles will intercept outgoing requests and inject trace headers :sunglasses:
   * Can **automatically** inject IDs into outgoing headers. Works with [axios](https://www.npmjs.com/package/axios#axios), [request](https://www.npmjs.com/package/request) & [http](https://nodejs.org/api/http.html#http_http_get_url_options_callback)/[https](https://nodejs.org/api/https.html#https_https_get_url_options_callback)
 * **More insight in your logs**
   * Git repository name
