@@ -72,7 +72,8 @@ function createScribble(deps) {
 
     let correlaterValue = myNamespace()
     const traceVals = correlaterValue('traceVals') || {};
-    const { traceId, spanId, span64, tracestate, spanLabel, trigger, logs } = traceVals
+    const { traceId, spanId, span64, tracestate, spanLabel, trigger, logs,
+            url, path, query, params, method } = traceVals
 
     const stackTrace = notUsed !== error ? error.stack.split("\n")
       .slice(1)
@@ -98,7 +99,12 @@ function createScribble(deps) {
         spanId,
         span64,
         spanLabel,
-        tracestate
+        tracestate,
+        url,
+        path,
+        query,
+        params,
+        method
       },
       info: {
         time: new Date(),

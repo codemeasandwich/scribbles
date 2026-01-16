@@ -77,12 +77,17 @@ There is a `config` that takes a configuration object.
     * `repo`: The git repository name as it appears on the origin
     * `branch`: The current git branch
     * `hash`: Short git hash of current commit
-  * trace:  
+  * trace:
     * `traceId`: Used for distributed tracing in microservices [**[more](https://www.w3.org/TR/trace-context/#trace-id)**]
     * `spanId`: the execution of a client call [**[more](https://www.w3.org/TR/trace-context/#parent-id)**]
     * `span64`: the base64 encoded version of `spanId`
     * `spanLabel`: A label to identify this trace
     * `tracestate`: Ordered list of key/value hops
+    * `url`: Full request URL with query string (middleware only)
+    * `path`: URL path without query string (middleware only)
+    * `query`: Query string parameters object (middleware only)
+    * `params`: Route parameters object (middleware only)
+    * `method`: HTTP method e.g. GET, POST (middleware only)
   * info:
     * `time`: Time of logging
     * `logLevel`: The logging level for this entry
@@ -723,6 +728,34 @@ scribbles.config({
 ```
 
 The array form checks headers in order - the first matching header is used.
+
+---
+
+### Logging Request Endpoints
+
+When using the Express middleware, you can include request details in your logs:
+
+```js
+scribbles.config({
+  format: '{method} {path} [{spanId}] {time} <{logLevel}> {message}'
+});
+
+app.use(scribbles.middleware.express);
+
+app.get('/users/:id', (req, res) => {
+  scribbles.log("Fetching user");
+  // GET /users/123 [090e8e40000005] 2022-06-27T16:24:06.473 <log> Fetching user
+});
+```
+
+The available request tokens are:
+- `{method}` - HTTP method (GET, POST, PUT, DELETE, etc.)
+- `{url}` - Full URL including query string (e.g., `/users/123?sort=name`)
+- `{path}` - URL path without query string (e.g., `/users/123`)
+- `{query}` - Query parameters as object (e.g., `{ sort: 'name' }`)
+- `{params}` - Route parameters as object (e.g., `{ id: '123' }`)
+
+These tokens are only populated when using `scribbles.middleware.express`.
 
 ---
 

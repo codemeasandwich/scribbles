@@ -34,6 +34,11 @@ function createTrace(deps) {
 
     if ('object' === typeof opts) {
       traceVals.headers = opts.headers;
+      traceVals.url = opts.url;
+      traceVals.path = opts.path;
+      traceVals.query = opts.query;
+      traceVals.params = opts.params;
+      traceVals.method = opts.method;
       let spanLabel = opts.spanLabel
 
       if (opts.traceId) {

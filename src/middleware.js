@@ -18,7 +18,8 @@ function createMiddleware(trace) {
      * @param {Object} res - Express response object
      * @param {Function} next - Express next function
      */
-    express: function correlateMiddleware({ headers, socket, connection, ip }, res, next) {
+    express: function correlateMiddleware(req, res, next) {
+      const { headers, socket, connection, ip } = req;
 
       let headersOut = {}
       if (config.headers) {
@@ -92,7 +93,12 @@ function createMiddleware(trace) {
         traceId: headers.traceparent && headers.traceparent.split('-')[1],
         tracestate: headers.tracestate,
         headers: headersOut,
-        spanLabel
+        spanLabel,
+        url: req.url,
+        path: req.path,
+        query: req.query,
+        params: req.params,
+        method: req.method
       }, (spanId) => next())
     } // END express
   } // END middleware
