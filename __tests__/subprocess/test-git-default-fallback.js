@@ -23,7 +23,7 @@ require('child_process').execSync = function() {
 // DO NOT set __scribbles_gitStatus__ - we want to test the default fallback
 
 // Clear require cache for getGitStatus.js to force re-evaluation
-const getGitStatusPath = path.join(__dirname, '..', '..', 'src', 'getGitStatus.js');
+const getGitStatusPath = path.join(__dirname, '..', '..', 'src', 'system', 'getGitStatus.js');
 delete require.cache[require.resolve(getGitStatusPath)];
 
 // Now require getGitStatus - it should use the defaults

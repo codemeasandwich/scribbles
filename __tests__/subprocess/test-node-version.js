@@ -1,13 +1,13 @@
 /**
- * Subprocess test: Node version check error
+ * @file Subprocess test: Node version check error.
  *
- * User Scenario: A developer tries to use scribbles on an old Node version
- * (< v8.5.0). Scribbles should throw a helpful error message.
+ * User scenario: a developer tries to use scribbles on an old Node
+ * version (< v8.5.0). Scribbles should throw a helpful error message.
  *
- * This tests checkNodeVer.js line 7:
- *   throw new Error("Scribbles needs node v8.5.0 or higher...")
+ * This tests `src/utils/checkNodeVer.js` line 7:
+ *     throw new Error("Scribbles needs node v8.5.0 or higher...")
  *
- * Note: We can't actually run on old Node, so we mock process.version
+ * Note: we can't actually run on old Node, so we mock process.version
  * before requiring the module.
  */
 
@@ -25,7 +25,7 @@ Object.defineProperty(process, 'version', {
 });
 
 // Clear require cache for checkNodeVer.js
-const checkNodeVerPath = path.join(__dirname, '..', '..', 'src', 'checkNodeVer.js');
+const checkNodeVerPath = path.join(__dirname, '..', '..', 'src', 'utils', 'checkNodeVer.js');
 delete require.cache[require.resolve(checkNodeVerPath)];
 
 // Try to require checkNodeVer - it should throw

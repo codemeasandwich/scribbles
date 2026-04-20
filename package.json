@@ -81,6 +81,15 @@
       "/__tests__/subprocess/",
       "/__tests__/scenarios/fixtures/",
       "/__tests__/scenarios/harness/"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/__tests__/",
+      "/dist/",
+      "/coverage/",
+      "/docs/",
+      "/scripts/",
+      "\\.stub\\.js$"
     ]
   },
   "nyc": {

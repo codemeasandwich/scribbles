@@ -26,7 +26,7 @@ global.__scribbles_gitStatus__ = {
 };
 
 // Clear require cache for getGitStatus.js to force re-evaluation
-const getGitStatusPath = path.join(__dirname, '..', '..', 'src', 'getGitStatus.js');
+const getGitStatusPath = path.join(__dirname, '..', '..', 'src', 'system', 'getGitStatus.js');
 delete require.cache[require.resolve(getGitStatusPath)];
 
 // Also clear index.js cache since it imports getGitStatus
