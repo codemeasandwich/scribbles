@@ -29,7 +29,7 @@
  *   why a preload is unavoidable for full parity in this runtime.
  */
 
-import scribbles from '../../../../index.js';
+import scribbles from '../../../../index.mjs';
 import run from './lib.mjs';
 
 // `scribbles` is imported purely for side-effect: the (future) D11 bug fix

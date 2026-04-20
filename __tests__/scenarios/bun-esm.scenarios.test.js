@@ -68,9 +68,9 @@ function buildBunConfiguredWorkspace() {
   // exercised. Pre-T5, the bare specifier won't resolve cleanly — that's the
   // expected RED for this path.
   const entrySrc = fs.readFileSync(path.join(FIXTURES, 'entry.mjs'), 'utf8')
-    .replace("'../../../../index.js'", "'scribbles'");
+    .replace("'../../../../index.mjs'", "'scribbles'");
   const libSrc = fs.readFileSync(path.join(FIXTURES, 'lib.mjs'), 'utf8')
-    .replace("'../../../../index.js'", "'scribbles'");
+    .replace("'../../../../index.mjs'", "'scribbles'");
   fs.writeFileSync(path.join(dir, 'entry.mjs'), entrySrc);
   fs.writeFileSync(path.join(dir, 'lib.mjs'), libSrc);
 

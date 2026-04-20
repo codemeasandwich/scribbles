@@ -63,7 +63,7 @@ function buildBunTestWorkspace() {
 
   // Copy the ESM lib — the test file below imports it.
   const libSrc = fs.readFileSync(path.join(FIXTURES, 'lib.mjs'), 'utf8')
-    .replace("'../../../../index.js'", "'scribbles'");
+    .replace("'../../../../index.mjs'", "'scribbles'");
   fs.writeFileSync(path.join(dir, 'lib.mjs'), libSrc);
 
   // Minimal `bun:test` file. Calls the fixture, captures stdout via a write

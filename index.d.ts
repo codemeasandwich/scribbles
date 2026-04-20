@@ -404,6 +404,61 @@ interface Middleware {
 }
 
 /**
+ * Return shape for `register.status()` — describes whether the
+ * runtime-specific source-transform hook is active.
+ */
+interface RegisterStatus {
+    /** Detected runtime of the current process. */
+    runtime: 'node-cjs' | 'node-esm' | 'bun-cjs' | 'bun-esm' | 'unknown';
+    /** True iff the CJS `Module._extensions` hook is installed. */
+    cjsInstalled: boolean;
+    /** True iff the ESM preload (`scribbles/register`) has executed. */
+    esmPreloaded: boolean;
+    /**
+     * Shorthand for "the right mechanism for the current runtime is
+     * wired". For CJS-only runtimes the CJS hook is sufficient; for
+     * ESM-ish runtimes the preload is the load-bearing piece.
+     */
+    transformActive: boolean;
+    /**
+     * Human-readable remediation text. Present iff `transformActive`
+     * is false — otherwise omitted.
+     */
+    instructions?: string;
+}
+
+/**
+ * Register API — installs the source-transform hook for the current
+ * runtime and exposes introspection helpers for CI / health-check use.
+ *
+ * Exposed as both a callable function (idempotent installer) and an
+ * object carrying `.status()` / `.assert()` methods. Also self-
+ * references under `.register` so `const { register } = require('scribbles')`
+ * and `import { register } from 'scribbles'` both yield the same value.
+ */
+interface Register {
+    /**
+     * Install the source-transform hook for the current runtime. Safe
+     * to call multiple times — only the first call has any effect.
+     */
+    (): void;
+
+    /** Inspect whether the transform is active (see RegisterStatus). */
+    status: () => RegisterStatus;
+
+    /**
+     * Fail-fast CI / boot check. Throws a `SCRIBBLES_NOT_REGISTERED`
+     * error with remediation instructions when the transform is not
+     * active (e.g. an ESM entrypoint booted without `--import
+     * scribbles/register` / `bunfig.toml` preload).
+     */
+    assert: () => void;
+
+    /** Self-reference so `const { register } = ...` is well-typed. */
+    register: Register;
+}
+
+/**
  * Group function collection for console.group-style logging
  */
 interface GroupFunction {
@@ -482,6 +537,17 @@ interface Scribbles {
      * Console grouping functions for organizing related log messages
      */
     group: GroupFunction;
+
+    /**
+     * Runtime-registration API (v2.0.0+).
+     *
+     * In CJS the `scribbles.register` property is a back-compat shim
+     * over the canonical `const { register } = require('scribbles')`
+     * named export. In ESM the hard cut applies: `scribbles.register`
+     * is `undefined` and users must do
+     * `import { register } from 'scribbles'`.
+     */
+    register: Register;
 }
 
 declare const scribbles: Scribbles;

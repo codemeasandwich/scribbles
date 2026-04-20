@@ -1,21 +1,35 @@
 {
   "name": "scribbles",
-  "version": "1.7.0",
-  "description": "Scribbles is a log and tracing lib for Node",
+  "version": "2.0.0",
+  "description": "Scribbles is a log and tracing lib for Node.js and Bun with automatic variable-name extraction, distributed tracing, and structured output",
   "files": [
     "dist/",
     "src/",
     "index.js",
+    "index.mjs",
     "appDir.js",
     "register.mjs",
     "register.cjs",
     "gitStatus.js",
     "index.d.ts",
+    "index.d.mts",
     "LICENSE"
   ],
   "main": "./dist/scribbles.js",
+  "module": "./index.mjs",
+  "types": "./index.d.ts",
   "exports": {
-    ".": "./dist/scribbles.js",
+    ".": {
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./index.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./dist/scribbles.js"
+      },
+      "default": "./dist/scribbles.js"
+    },
     "./register": {
       "import": "./register.mjs",
       "require": "./register.cjs",
