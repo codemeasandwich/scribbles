@@ -37,8 +37,19 @@ describe('Loader Auto-instrumentation', () => {
             expect(fs.existsSync(loaderPath)).toBe(true);
         });
 
-        it('should have node-hook available', () => {
-            expect(() => require('node-hook')).not.toThrow();
+        it('should install the source-transform hook on require', () => {
+            // v2: node-hook was dropped in T3; the ~25 LOC we used is now
+            // inlined in src/register/hooks/cjs-extensions.js. The public
+            // contract this test upholds — that requiring scribbles (or
+            // src/parsing/loader) activates the transform — is preserved
+            // and exercised by the source-transformation suites below.
+            const { _processSource } = require('../src/parsing/loader');
+            expect(typeof _processSource).toBe('function');
+            const transformed = _processSource(
+                "scribbles.log('x');",
+                '/tmp/hook-active-probe.js'
+            );
+            expect(transformed).toContain('scribbles.log.at(');
         });
     });
 

@@ -42,10 +42,19 @@ describe('Scenario: v2 CJS named-export surface', () => {
   it('exposes config, trace, middleware, and register as destructurable names', () => {
     const { config, trace, middleware, register } = require('../../index.js');
 
+    // `config`, `trace`, and `register` are directly-callable functions.
     expect(typeof config).toBe('function');
     expect(typeof trace).toBe('function');
-    expect(typeof middleware).toBe('function');
     expect(typeof register).toBe('function');
+
+    // `middleware` is a namespace OBJECT (not a callable), exposing a
+    // per-framework handler surface:
+    //   - middleware.express  — Express-compatible correlation middleware
+    // Users wire it with `app.use(middleware.express)` in Express apps.
+    // Future frameworks (fastify, koa, etc.) would grow this namespace.
+    expect(typeof middleware).toBe('object');
+    expect(middleware).not.toBeNull();
+    expect(typeof middleware.express).toBe('function');
   });
 
   it('named register is the same function the library uses internally', () => {
@@ -78,7 +87,57 @@ describe('Scenario: v2 CJS named-export surface', () => {
     const scribbles = require('../../index.js');
     expect(typeof scribbles.config).toBe('function');
     expect(typeof scribbles.trace).toBe('function');
-    expect(typeof scribbles.middleware).toBe('function');
+    expect(typeof scribbles.middleware).toBe('object');       // namespace with .express
+    expect(typeof scribbles.middleware.express).toBe('function');
     expect(typeof scribbles.register).toBe('function');
+  });
+});
+
+describe('Scenario: v2 register.status() / register.assert() introspection', () => {
+  // These assertions run inside Jest's own Node process, which is Node-CJS.
+  // The CJS hook is installed by `require('../../index.js')` above via
+  // index.js's auto-register, so status().transformActive should report
+  // true and assert() should not throw. ESM variants of this test live in
+  // the bun-esm / node-esm scenarios where the preload path is exercised
+  // end-to-end.
+  it('register.status() returns a structured result with expected keys', () => {
+    const { register } = require('../../index.js');
+    const s = register.status();
+    expect(s).toHaveProperty('runtime');
+    expect(s).toHaveProperty('cjsInstalled');
+    expect(s).toHaveProperty('esmPreloaded');
+    expect(s).toHaveProperty('transformActive');
+    // In the Jest runner (Node-CJS), the CJS hook auto-installed on
+    // `require('../../index.js')` so status should reflect an active
+    // transform. If this ever flips false, something has regressed the
+    // D11 auto-install path.
+    expect(s.cjsInstalled).toBe(true);
+    expect(s.transformActive).toBe(true);
+  });
+
+  it('register.status() reports the current runtime', () => {
+    const { register } = require('../../index.js');
+    const s = register.status();
+    // Jest runs on Node with a .js (not .mjs) entry, so our heuristic
+    // classifies the runtime as 'node-cjs'. If/when Jest's runner ever
+    // starts up with an .mjs entry this test would need to be revisited,
+    // but that is not the case today.
+    expect(['node-cjs', 'bun-cjs']).toContain(s.runtime);
+  });
+
+  it('register.assert() does not throw when transform is active', () => {
+    const { register } = require('../../index.js');
+    expect(() => register.assert()).not.toThrow();
+  });
+
+  it('register is idempotent — calling it multiple times is safe', () => {
+    const { register } = require('../../index.js');
+    // The register function is also directly callable to install the hook.
+    // Because install-flag.js tracks install state via Symbol.for, repeated
+    // calls are no-ops. Losing that property would cause duplicate
+    // transforms to run on every file load, which would produce malformed
+    // source (an already-rewritten `scribbles.log.at(...)` being rewritten
+    // a second time as `scribbles.log.at.at(...)` or similar).
+    expect(() => { register(); register(); register(); }).not.toThrow();
   });
 });

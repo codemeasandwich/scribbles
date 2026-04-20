@@ -12,9 +12,18 @@ src/
 │   ├── colors.js
 │   └── stringify.js
 ├── parsing/
+│   ├── args-parser.js
 │   ├── args2keys.js
 │   ├── loader.js
-│   └── parceStringVals.js
+│   ├── parceStringVals.js
+│   └── transform.js
+├── register/
+│   ├── hooks/
+│   │   ├── cjs-extensions.js
+│   │   └── esm-loader.mjs
+│   ├── index.js
+│   ├── install-flag.js
+│   └── warn.js
 ├── system/
 │   ├── getGitStatus.js
 │   └── status.js
@@ -40,6 +49,12 @@ Output formatting and display - colors, JSON stringification.
 
 ### `parsing/`
 Input processing and argument parsing - argument conversion, code instrumentation.
+
+### `register/`
+Unified runtime adapter for installing Scribbles' source-transform hook.
+Exports a single idempotent `register()` function consumed by `index.js`
+on library load. The CJS hook (Node + Bun) lives in `hooks/cjs-extensions.js`;
+ESM and Bun-specific installers join it as T5 and T6 land.
 
 ### `system/`
 System and environment information - git status, CPU/memory metrics.
