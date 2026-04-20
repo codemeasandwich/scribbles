@@ -1,194 +1,51 @@
-const hook = require('node-hook');
-const appDir = require('../../appDir');
-const config = require('../core/config');
+/**
+ * @file Legacy loader entry — backward-compat shim during the v2 refactor
+ *
+ * Domain context
+ * --------------
+ * Until v1.7.0 this file carried three responsibilities at once:
+ *   1. the pure source transform (`processFileForScribblesCalls`);
+ *   2. the argument-list parser (`loadArgNames` / `splitArgs`);
+ *   3. the CJS-only side-effect of installing the `Module._extensions['.js']`
+ *      hook via `node-hook`.
+ *
+ * T2 split (1) and (2) into dedicated pure modules. T3 (this revision) moves
+ * the hook install into the unified `src/register/` adapter and removes the
+ * `node-hook` dependency entirely — the ~25 LOC of install logic we actually
+ * used is inlined in `src/register/hooks/cjs-extensions.js`. This file now
+ * exists purely so that the test corpus (~12 suites that import
+ * `_loadArgNames` / `_splitArgs` / `_processSource`) keeps working unchanged.
+ * Scheduled for deletion in T12's dead-code sweep once those tests have
+ * been migrated to import from the new module locations.
+ *
+ * Technical context
+ * -----------------
+ * - Delegates to `./transform` (the pure rewrite function) and `./args-parser`
+ *   (the character-at-a-time state machine). No logic lives in this file.
+ * - The hook install still happens on require (same observable behaviour as
+ *   v1.x) but goes through `src/register/index.js` which coordinates with
+ *   `index.js`'s auto-register and is idempotent across call sites.
+ */
 
-// Note: This function runs inside node-hook before Jest's coverage instrumentation.
-// The code IS executed (verified by fixture file tests working), but coverage
-// cannot be measured. The exported _loadArgNames and _splitArgs are tested
-// directly in 99-loader-utils.test.js to ensure the parsing logic is covered.
-/* istanbul ignore next */
-function processFileForScribblesCalls(source, filename) {
+'use strict';
 
-  const path = filename.startsWith("/" + appDir) ? filename.substr(appDir.length + 2) : "/" + filename
+const register = require('../register');
+const { transformSource } = require('./transform');
+const { loadArgNames, splitArgs } = require('./args-parser');
 
-  const levels2check = [...config.levels, "status"];
-  return source.split("\n").map((line, index, lines) => {
+// Preserve the side-effect that the pre-v2 loader had: merely requiring
+// this file installs the transform hook. register() is idempotent, so if
+// `index.js` (the package main) has already called register() this is a
+// no-op; if a test requires the loader directly without first requiring
+// scribbles, register() installs here instead.
+register();
 
-    if (0 <= line.indexOf("scribbles.")) {
-
-      for (let level of levels2check) {
-
-        //TODO: use the list on `resirvedFnNames`
-        // if scribbles.***( is NOT a resirvedFnNames
-        // then take thats its a LOG & replace with **.at(...)
-        const find = "scribbles." + level + "("
-        const indexOf = line.indexOf(find)
-        if (0 <= indexOf) {
-          let runningCharPointer = indexOf + find.length;
-          let linePointer = index
-          let myLine = line
-          const getNextChar = () => {
-            //console.log(runningCharPointer,">",myLine.length)
-            if (runningCharPointer > myLine.length) {
-              runningCharPointer = 0
-              myLine = lines[++linePointer]
-            }
-            //console.log(runningCharPointer,myLine)
-            const result = [
-              myLine[runningCharPointer - 1] || "",
-              myLine[runningCharPointer],
-            ]
-            runningCharPointer++
-            //console.log(result)
-            return result
-          } // getNextChar
-          return line.replace(find, `scribbles.${level}.at({file:"${path}",line:${index + 1},col:${indexOf},args:[${loadArgNames(getNextChar)}]},`)
-        } // END if
-      }// END for
-    } // END if
-    return line
-
-  }).join("\n")
-
-}
-
-hook.hook('.js', processFileForScribblesCalls);
-
-
-
-const allStrings = ['"', "'", '`']
-function loadArgNames(getChar) {
-
-  let result = {
-    temp: "",
-    opened: [],
-    args: [],
-    fin: false,
-    procThisLoop: true,
-    names: [],
-    raw: ""
-  }
-
-  let index = 0
-  do {
-    const [preChar, char] = getChar()
-    result = splitArgs(result, char, preChar)
-    index++
-  } while (!result.fin)
-  return result.args
-    .map(line => line ? "x=>x`" + line + "`"
-      : line)
-    .join()
-} // END loadArgNames
-
-function splitArgs(all, char, preChar) {
-  // x=>x`user[index:${index}]`
-  // x=>x`err`
-
-  // Split it up into args
-  const lastOpened = all.opened[all.opened.length - 1]
-  if ("" === all.temp
-    && " " === char) {
-    return all
-  }
-  if ("" === all.temp
-    && (allStrings.includes(char)
-      || ['{', '['].includes(char))) {
-    all.procThisLoop = false
-  }
-
-  if (allStrings.includes(char)
-    && !allStrings.includes(lastOpened)) {
-    all.opened.push(char)
-    all.procThisLoop = false
-  }
-  if (0 === all.opened.length) {
-    switch (char) {
-      case ')':
-        all.fin = true
-      case ',':
-        if (all.raw.includes("=>")
-          || all.raw.includes("function")
-          || "undefined" === all.raw.trim()
-          || "true" === all.raw.trim()
-          || "false" === all.raw.trim()
-          || "new Date" === all.raw.trim()
-          || "new Date()" === all.raw.trim()
-          || /^-{0,1}\d+(\.\d+)?$/.test(all.raw.trim())
-          || "null" === all.raw.trim()) {
-          all.args.push(false)//(all.raw)
-        } else if (!['{', '[', '(', '"', "'", '`'].some(x => all.temp.includes(x))) {
-          all.args.push(all.temp/*+":${"+all.temp+"}"*/)
-        } else if (!allStrings.includes(all.temp[0])
-          && !['{', '['].includes(all.temp[0])) {
-          all.args.push(all.temp)
-        } else {
-          all.args.push(false)
-        }
-        all.temp = ""
-        all.raw = ""
-        all.names = []
-        all.procThisLoop = true
-        return all
-    }
-  }
-  if (allStrings.includes(lastOpened) && char === lastOpened
-    || '}' === char && '{' === lastOpened
-    || ')' === char && '(' === lastOpened
-    || ']' === char && '[' === lastOpened) {
-    //   console.log(all)
-    all.opened.pop()
-    if (all.procThisLoop && 0 < all.names.length) {
-      //  debugger
-      const thisName = all.names[all.names.length - 1].slice(2)
-      // console.log(all,thisName)
-      if (thisName.includes(":")
-        || thisName === `${+thisName}`) {
-        all.names.pop()
-      } else {
-        all.temp += all.names.pop() + '}'
-      }
-    }
-    all.procThisLoop = !allStrings.includes(lastOpened)
-  } else if ("`" === lastOpened
-    && '{' === char
-    && '$' === preChar) {
-    all.opened.push(char)
-    if (all.procThisLoop)
-      all.names.push("${")
-  } else if (!allStrings.includes(lastOpened)
-    && ['{', '[', '('].includes(char)) {
-    all.opened.push(char)
-    if (all.procThisLoop) {
-      all.names.push("${")
-    }
-
-  } else if (all.procThisLoop) {
-    const named = all.names[all.names.length - 1]
-    if (":${" === named
-      && (allStrings.includes(char) || `${+char}` === char)) {
-      all.procThisLoop = false
-      all.names.pop()
-    } else if ("," === char) {
-      //   debugger
-      all.temp += all.names.pop() + '}'
-    } else {
-      all.names[all.names.length - 1] = named + char
-    }
-  } else if ("," === char
-    && ['{', '[', '('].includes(lastOpened)) {
-    all.procThisLoop = true
-    all.names.push("${")
-  }
-  all.temp += char
-  all.raw += char
-  return all
-
-} // END processChar
-
-// Export for testing - these are the arg parsing utilities
+// Legacy aliases. Kept verbatim so the test suite compiled against the v1
+// shape continues to work unmodified during T2. The underscore-prefixed
+// naming (`_loadArgNames`, `_splitArgs`, `_processSource`) is the convention
+// the pre-v2 codebase used for "exported for tests only" symbols.
 module.exports = {
   _loadArgNames: loadArgNames,
   _splitArgs: splitArgs,
-  _processSource: processFileForScribblesCalls
+  _processSource: transformSource
 };
