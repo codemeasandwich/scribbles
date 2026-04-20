@@ -17,6 +17,11 @@ linters/
 
 # testing
 /coverage
+/.nyc_output
+
+# local author notes and scratch artifacts
+Note.md
+=
 
 # compiled output
 /build

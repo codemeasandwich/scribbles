@@ -36,9 +36,80 @@
 
 ### If you like it, [★ it on github](https://github.com/codemeasandwich/scribbles), [![Buy me a coffee](https://img.shields.io/badge/buy%20me-a%20coffee-orange.svg)](https://www.buymeacoffee.com/codemeasandwich) and/or share :beers:
 
+## Quickstart
+
+The shortest possible path to a working install, by runtime. Pick one
+and you're done.
+
+**Node CJS** (`require('scribbles')` — the default):
+
+```sh
+npm install --save scribbles
+```
+
+```js
+const scribbles = require('scribbles');
+scribbles.log('hello', { user: 'alice' });
+// ... <log> entry.js:2 hello { user:"alice" }
+```
+
+No flags, no preload, no config file.
+
+**Node ESM** (`import ... from 'scribbles'`):
+
+```sh
+npm install --save scribbles
+```
+
+```sh
+node --import scribbles/register app.mjs
+```
+
+```js
+import scribbles, { config } from 'scribbles';
+scribbles.log('hello', { user: 'alice' });
+```
+
+(Equivalent via environment: `NODE_OPTIONS="--import scribbles/register"`.)
+
+**Bun** (`bun run`, `bun test`):
+
+```sh
+bun add scribbles
+```
+
+```toml
+# bunfig.toml — project root
+preload = ["scribbles/register"]
+
+[test]
+preload = ["scribbles/register"]
+```
+
+```js
+import scribbles, { config } from 'scribbles';
+scribbles.log('hello', { user: 'alice' });
+```
+
+That's the whole setup. If something looks off, the next-stop
+references are:
+
+- [`docs/troubleshooting.md`](./docs/troubleshooting.md) — common
+  errors and fixes
+- [`docs/runtime-setup.md`](./docs/runtime-setup.md) — deeper
+  runtime-specific reference
+- `register.status()` — Scribbles' self-diagnostic; always the first
+  thing to check when debugging
+
 ## How to install
 
-You should be running **node v8.5.0+**
+Scribbles supports Node and Bun.
+
+| Runtime | Minimum version | Setup |
+| --- | --- | --- |
+| Node CJS (`require('scribbles')`) | **8.5.0** | None — works out of the box |
+| Node ESM (`import scribbles from 'scribbles'`) | **20.6** | One-line preload (below) |
+| Bun (runtime, `bun test`, ESM) | **1.0** | One-line `bunfig.toml` entry (below) |
 
 ```
 npm install --save scribbles
@@ -47,6 +118,87 @@ npm install --save scribbles
 ```
 yarn add scribbles
 ```
+
+```
+bun add scribbles
+```
+
+### Runtime support
+
+For **Node CJS** (`require('scribbles')`), automatic variable-name extraction
+works out of the box — no flags or setup. You're done, just use the library.
+
+For **Node ESM** (`import scribbles from 'scribbles'`), add one preload to
+your Node invocation so Scribbles can install its source-transform loader
+before your module graph is parsed:
+
+```sh
+node --import scribbles/register app.mjs
+```
+
+Equivalent via `NODE_OPTIONS`:
+
+```sh
+NODE_OPTIONS="--import scribbles/register" node app.mjs
+```
+
+For **Bun** (`bun run`, `bun test`), add the following to `bunfig.toml`:
+
+```toml
+preload = ["scribbles/register"]
+
+[test]
+preload = ["scribbles/register"]
+```
+
+Bun treats `bun run` and `bun test` as separate execution contexts with
+separate preload configuration. The top-level entry covers `bun run`
+and the `bun <file>` shorthand; the `[test]` section covers `bun test`.
+Setting both is the idiomatic full-coverage configuration. Detailed manual-setup instructions, troubleshooting, and
+edge cases are in [`docs/runtime-setup.md`](./docs/runtime-setup.md).
+
+If you run Scribbles in an ESM context **without** the preload, it still
+works — you get correct file/line/col from stack traces — but automatic
+variable-name extraction is silently unavailable. A one-line warning will
+print to `stderr` on every startup until you wire the preload.
+
+You can programmatically verify the preload at boot from a CI or
+production init script:
+
+```js
+const { register } = require('scribbles');
+register.assert();   // throws with a helpful message if transform not active
+```
+
+### Something's not working?
+
+Start with [`docs/troubleshooting.md`](./docs/troubleshooting.md). It
+indexes the common errors by their exact message text and walks through
+each fix. The first diagnostic is always:
+
+```js
+const { register } = require('scribbles');
+console.log(register.status());
+```
+
+…which returns a structured `{ runtime, cjsInstalled, esmPreloaded,
+transformActive, instructions? }` object that tells you which half of
+the transform is (or isn't) active right now.
+
+### Upgrading from v1?
+
+See [MIGRATION.md](./MIGRATION.md). The TL;DR:
+
+- Your existing CJS code (`const scribbles = require('scribbles');
+  scribbles.config(...)`) continues to work unchanged.
+- v2 adds ESM support, Bun support (`bun run`, `bun test`, `bun build`),
+  a new `register` named export, and fixes a v1.7.0 bug where automatic
+  variable-name extraction silently never activated.
+- In ESM, the v2.0.0 "hard cut" applies: `scribbles.config(...)` on the
+  default import is `undefined`. Use named imports —
+  `import scribbles, { config, trace, register } from 'scribbles'` —
+  for anything that is not a log level. The CJS entry keeps both
+  property access and destructuring available for back-compat.
 
 ## How to use
 
@@ -88,22 +240,34 @@ The `from` object requires:
 
 ## TypeScript Support
 
-Scribbles includes TypeScript definitions (`index.d.ts`). Key interfaces available:
+Scribbles ships both CJS (`index.d.ts`) and ESM (`index.d.mts`)
+TypeScript definitions. The `exports` map in `package.json` routes
+`import` consumers to the ESM types automatically. Key interfaces:
 
-- `ScribblesConfig` - Configuration options
-- `LogEntry` - Structured log entry returned by log functions
-- `TraceOptions` - Options for `scribbles.trace()`
-- `LogFunction` - Type for log level functions
+- `ScribblesConfig` — Configuration options
+- `LogEntry` — Structured log entry returned by log functions
+- `TraceOptions` — Options for the `trace` function
+- `LogFunction` — Type for log level functions
+- `Register` / `RegisterStatus` — v2 runtime-registration helpers
 
 ```ts
-import scribbles, { LogEntry, ScribblesConfig } from 'scribbles';
+// ESM (v2 idiom — named import for config)
+import scribbles, { config, LogEntry, ScribblesConfig } from 'scribbles';
 
-const config: Partial<ScribblesConfig> = {
+const opts: Partial<ScribblesConfig> = {
     logLevel: 'info',
     dataOut: (entry: LogEntry) => console.log(entry)
 };
 
-scribbles.config(config);
+config(opts);
+scribbles.log('hello');
+```
+
+```ts
+// CJS (v1-style property access still works)
+import scribbles = require('scribbles');
+scribbles.config({ logLevel: 'info' });
+scribbles.log('hello');
 ```
 
 ---
@@ -342,7 +506,7 @@ When logging values, scribbles adds type annotations to help identify the data t
 
 ### Limitations
 
-- Only works with Node.js `require()` - bundled/transpiled code needs source maps
+- Works across Node.js (`require`/`import`) and Bun (`bun run`, `bun test`, `bun build`) — ESM contexts require the `scribbles/register` preload (see "Runtime support" above). Bundled/transpiled code still needs source maps for file/line accuracy.
 - Literal values (strings, numbers, booleans) don't get variable name extraction since there's no variable name to extract
 
 ---
