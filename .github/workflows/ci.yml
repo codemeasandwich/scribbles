@@ -1,0 +1,48 @@
+name: CI
+
+# Runs the full Jest suite, including scenario spawners, across the Node LTS
+# matrix plus the latest Bun. Scenario tests that target Bun skip gracefully
+# on the Node-only jobs via `describeBun = hasBinary('bun') ? describe : describe.skip`
+# in the harness, and scenario tests that target Node run on every job.
+#
+# This complements `publish.yml` (which runs on release and uses a single Node
+# version); this file exercises the matrix on every push / PR so that a
+# Node-version regression or a Bun-specific regression is caught pre-merge.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-matrix:
+    name: Node ${{ matrix.node }} + Bun
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full test suite (Jest + scenarios)
+        run: npm test
