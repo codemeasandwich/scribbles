@@ -1,6 +1,6 @@
 {
   "name": "scribbles",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Scribbles is a log and tracing lib for Node.js and Bun with automatic variable-name extraction, distributed tracing, and structured output",
   "files": [
     "dist/",
@@ -67,7 +67,6 @@
   ],
   "homepage": "https://github.com/codemeasandwich/scribbles#readme",
   "devDependencies": {
-    "@ashleyw/cls-hooked": "^5.0.1",
     "jest": "^29.3.1",
     "moment": "^2.24.0",
     "nyc": "^17.1.0",

@@ -1,12 +1,27 @@
 /**
  * @file Distributed tracing functions
+ *
+ * Binds `scribbles.trace(opts, callback)` to an async-context scope so
+ * every log call — synchronous or after any number of `await`s — can
+ * read the active trace's traceparent / tracestate / spanId.
+ *
+ * Context propagation uses `AsyncLocalStorage` via `./namespace.js`.
+ * The prior `@ashleyw/cls-hooked`-based path lost context across
+ * `await` on Bun 1.3 because Bun's async_hooks lifecycle does not
+ * trigger cls-hooked's init/before/after callbacks reliably for
+ * Promise continuations. AsyncLocalStorage works correctly on both
+ * Node (>=16.4) and Bun (>=1.0), so the migration is the unblocker for
+ * the integrator-reported "traceId lost after first await" issue.
  */
+
+'use strict';
+
 const crypto = require('crypto');
-const createNamespace = require('@ashleyw/cls-hooked').createNamespace;
 
 const config = require('../core/config');
 const { deepMerge } = require('../utils/helpers');
 const { parceTracestate, hashTracestate } = require('../utils/utils');
+const { store } = require('./namespace');
 
 const tracestateLookup = new Map();
 
@@ -76,11 +91,22 @@ function createTrace(deps) {
 
     traceCount.increment();
 
-    const traceNs = createNamespace(traceVals.spanId)
-    traceNs.run(() => {
-      traceNs.set('traceVals', traceVals);
-      next(traceVals.spanId)
-    })
+    // Enter the trace's async-context scope. Every call to
+    // `myNamespace()('traceVals')` from here on — including those made
+    // inside async continuations of `next` — resolves to the same
+    // `traceVals` object, because `AsyncLocalStorage` threads the store
+    // through Promise microtasks, setImmediate, setTimeout, etc. on
+    // both Node and Bun.
+    //
+    // The store is wrapped in `{ traceVals }` rather than set to
+    // `traceVals` directly so that the key-addressed reader exposed by
+    // `namespace.myNamespace()` — `correlaterValue('traceVals')` —
+    // keeps its pre-AsyncLocalStorage v1 contract: every reader call
+    // site (trace.headers + scribble.js) looks up the `traceVals` key,
+    // which the cls-hooked backend stored under that exact name. The
+    // wrapping is what lets the migration be a drop-in replacement for
+    // every existing callsite without a cascading rewrite.
+    store.run({ traceVals }, () => next(traceVals.spanId))
   } // END trace
 
   /**
@@ -100,7 +126,12 @@ function createTrace(deps) {
         return arr;
       }, [`${config.vendor}=${span64}`]).slice(0, 32);
 
-    if (config.edgeLookupHash && tracestateValue.length > 0) {
+    // `tracestateValue` always has at least one element at this point —
+    // the reduce above seeds it with `[`${config.vendor}=${span64}`]`
+    // before folding in any inbound tracestate entries. The previous
+    // `&& tracestateValue.length > 0` defensive guard was therefore
+    // dead and was removed per CASE's dead-code rule.
+    if (config.edgeLookupHash) {
       const fullTracestate = tracestateValue.join();
       const hash = 'h:' + hashTracestate(tracestate || []);
       tracestateLookup.set(hash, fullTracestate);
@@ -109,8 +140,13 @@ function createTrace(deps) {
       tracestateValue = tracestateValue.join();
     }
 
+    // `gitValues` is always an object (see `src/system/getGitStatus.js`
+    // — either the resolved git metadata or the `{hash:"",repo:"",
+    // branch:""}` fallback), so the prior `gitValues && gitValues.hash`
+    // defensive guard's falsy arm was unreachable. Simplified to the
+    // direct property access per CASE's dead-code rule.
     return deepMerge(Object.assign({
-      "x-git-hash": gitValues && gitValues.hash || undefined,
+      "x-git-hash": gitValues.hash || undefined,
       traceparent: `${version || '00'}-${traceId}-${spanId}-${flag || '01'}`,
       tracestate: tracestateValue
     }, headers || {}), customHeader)
