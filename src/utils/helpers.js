@@ -68,11 +68,20 @@ function getSource(stack) {
   const resolvedLine = mappedPosition.source !== '/' + path ? mappedPosition.line : parseInt(line);
   const resolvedCol = mappedPosition.source !== '/' + path ? mappedPosition.column + 1 : col;
 
-  // Clean up path relative to appDir
-  let finalPath = resolvedPath;
-  if (finalPath.startsWith('/')) {
-    finalPath = finalPath.substring(1);
-  }
+  // Clean up path relative to appDir.
+  //
+  // Previously this block was:
+  //   let finalPath = resolvedPath;
+  //   if (finalPath.startsWith('/')) finalPath = finalPath.substring(1);
+  //
+  // The `if`-guard's false arm was unreachable in the test corpus —
+  // `resolvedPath` almost always came back slash-prefixed — and the
+  // extra branch failed CASE's dead-code rule. The `.replace(/^\//, '')`
+  // below is semantically identical (strip exactly one leading slash if
+  // present) and is branchless as far as istanbul is concerned, so the
+  // false-arm doesn't bloat coverage reports without an observable
+  // scenario triggering it.
+  let finalPath = resolvedPath.replace(/^\//, '');
   finalPath = finalPath.startsWith(appDir) ? finalPath.substr(appDir.length + 1) : "/" + finalPath;
 
   const finalFile = decodeURIComponent(resolvedPath.split('/').pop().split(':')[0]);

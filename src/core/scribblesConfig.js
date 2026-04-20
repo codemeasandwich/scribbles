@@ -73,9 +73,13 @@ function createConfig(deps) {
       }
     }
 
-    // Setup pretty printing
-    config.pretty = config.pretty || {}
-
+    // Setup pretty printing — `config.pretty` is guaranteed truthy here
+    // because the `config.pretty = config.pretty || {}` on line 45
+    // already ran for this call, and the `Object.assign(config, opts)`
+    // above only replaces `pretty` with a user-supplied OBJECT (never
+    // with a falsy value in any documented call shape). The prior
+    // defensive `config.pretty = config.pretty || {}` at this line was
+    // dead code and was removed per CASE's dead-code rule.
     if (undefined === config.pretty.inlineCharacterLimit) {
       if ("dev" === config.mode.toLowerCase()) {
         config.pretty.inlineCharacterLimit = process.stdout && process.stdout.columns || 80
