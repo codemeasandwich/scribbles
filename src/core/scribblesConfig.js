@@ -9,6 +9,15 @@ const { getSource } = require('../utils/helpers');
 const { defaultColorScheme, colorblindScheme, shouldEnableColors } = require('../formatting/colors');
 
 /**
+ * Default visible caption for `groupEnd` when the caller does not pass an override string.
+ * @param {string} label - Label stored on the group stack; may be empty.
+ * @returns {string} The label, or the string "Group" when empty.
+ */
+function defaultGroupEndCaption(label) {
+  return label ? label : 'Group';
+}
+
+/**
  * Creates the config function for scribbles
  * @param {Object} deps - Dependencies
  * @param {Object} deps.scribbles - The scribbles object to configure
@@ -215,19 +224,67 @@ function createConfig(deps) {
         return id
       },
 
-      end: (groupId) => {
+      /**
+       * Close a group and emit `groupEnd` with a visible summary line.
+       *
+       * Domain: operators need closing lines to name what finished, mirroring
+       * `group.start` labels — default is the same label stored at start; callers
+       * can override per close.
+       *
+       * Call shapes (first arg type disambiguates):
+       * - `end()` — LIFO pop; message = started label or `"Group"`.
+       * - `end("summary")` — LIFO pop; message = `"summary"`.
+       * - `end(id)` — splice from `id`; message = that group's stored label (or `"Group"`).
+       * - `end(id, "summary")` — splice from `id`; message = `"summary"` (empty string allowed).
+       *
+       * Technical: unknown `id` skips splice (existing no-op semantics); message falls
+       * back to `''` when nothing was closed and no override was passed.
+       *
+       * @param {number|string|undefined} groupIdOrEndLabel - Numeric id, or LIFO end-caption string, or omit.
+       * @param {string|undefined} endLabel - When first arg is id, optional caption (including `''`).
+       * @returns {Object} Log body from `scribble`.
+       */
+      end: (groupIdOrEndLabel, endLabel) => {
         const from = getSource(new Error().stack)
-        if (groupId !== undefined) {
-          // Close specific group and all nested groups inside it
-          const idx = groupStack.findIndex(g => g.id === groupId)
-          if (idx !== -1) {
-            groupStack.splice(idx)
+        /** @type {number|undefined} */
+        let targetId
+        /** @type {string|undefined} */
+        let messageOverride
+
+        if (typeof groupIdOrEndLabel === 'number') {
+          targetId = groupIdOrEndLabel
+          if (typeof endLabel === 'string') {
+            messageOverride = endLabel
           }
-        } else {
-          // LIFO - close last opened
-          groupStack.pop()
+        } else if (typeof groupIdOrEndLabel === 'string') {
+          messageOverride = groupIdOrEndLabel
         }
-        return scribble.call(null, from, 'groupEnd', '')
+
+        if (targetId !== undefined) {
+          const idx = groupStack.findIndex(g => g.id === targetId)
+          if (idx !== -1) {
+            const closed = groupStack[idx]
+            groupStack.splice(idx)
+            const msg =
+              messageOverride !== undefined
+                ? messageOverride
+                : defaultGroupEndCaption(closed.label)
+            return scribble.call(null, from, 'groupEnd', msg)
+          }
+          const msg = messageOverride !== undefined ? messageOverride : ''
+          return scribble.call(null, from, 'groupEnd', msg)
+        }
+
+        const popped = groupStack.pop()
+        if (!popped) {
+          const msg = messageOverride !== undefined ? messageOverride : ''
+          return scribble.call(null, from, 'groupEnd', msg)
+        }
+        const msg =
+          messageOverride !== undefined
+            ? messageOverride
+            : defaultGroupEndCaption(popped.label)
+        return scribble.call(null, from, 'groupEnd', msg)
       }
     }
 

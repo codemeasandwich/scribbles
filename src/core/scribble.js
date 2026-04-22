@@ -10,7 +10,7 @@ const stringify = require('../formatting/stringify');
 const status = require('../system/status');
 const { myNamespace } = require('../tracing/namespace');
 const { parceStringVals } = require('../parsing/parceStringVals');
-const { colorize } = require('../formatting/colors');
+const { formatGroupLogLineForStdOut } = require('../formatting/groupLogPrefix');
 
 const notUsed = { not: 'used' }
 
@@ -175,41 +175,23 @@ function createScribble(deps) {
           : "") + stackTrace.map(line => ` at ${line}`).join("\n")
           : "";
 
-        // Group indentation prefix
-        let groupPrefix = ''
+        // Group stdOut layout (tree rails, optional per-depth 24-bit color) lives in
+        // `formatting/groupLogPrefix.js` so this file stays under the size gate.
         const groupLevel = body.context.groupLevel || 0
-        if (groupLevel > 0 || ['group', 'groupCollapsed', 'groupEnd'].includes(level)) {
-          if (config.pretty && config.pretty.groupBrackets) {
-            // ASCII bracket style
-            if (level === 'group' || level === 'groupCollapsed') {
-              groupPrefix = '⎡ '
-            } else if (level === 'groupEnd') {
-              groupPrefix = '⎣\n'
-            } else {
-              groupPrefix = '⎜ ' + '  '.repeat(Math.max(0, groupLevel - 1))
-            }
-          } else {
-            // Simple indentation (indent logs inside groups, not the group markers themselves)
-            if (!['group', 'groupCollapsed', 'groupEnd'].includes(level)) {
-              groupPrefix = '  '.repeat(groupLevel)
-            }
-          }
-        }
-
-        let formattedOutput = groupPrefix + config.__compile(Object.assign(all, {
+        const compiledLine = config.__compile(Object.assign(all, {
           time,
           value: outputValue,
           message: outputMessage,
           stackTrace: outputStackTrace
         }))
-
-        // Apply colors if enabled
-        if (config.colors && config.colorScheme) {
-          const levelColor = config.colorScheme[level];
-          if (levelColor) {
-            formattedOutput = colorize(formattedOutput, levelColor);
-          }
-        }
+        const levelColor = config.colorScheme && config.colorScheme[level]
+        const formattedOutput = formatGroupLogLineForStdOut(
+          config,
+          level,
+          groupLevel,
+          compiledLine,
+          levelColor
+        )
 
         return formattedOutput;
       }

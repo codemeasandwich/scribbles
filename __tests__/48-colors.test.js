@@ -229,6 +229,32 @@ describe('Color utilities', () => {
       expect(ANSI.brightCyan).toBe('\x1b[96m');
     });
   });
+
+  describe('groupTreeOpenAtDepth', () => {
+    const { groupTreeOpenAtDepth, ANSI } = require('../src/formatting/colors');
+    const nonColorKeys = new Set(['reset', 'bold', 'dim', 'underline']);
+
+    it('should emit 24-bit foreground openers only', () => {
+      for (let d = 1; d <= 12; d++) {
+        expect(groupTreeOpenAtDepth(d, false).startsWith('\x1b[38;2;')).toBe(true);
+        expect(groupTreeOpenAtDepth(d, true).startsWith('\x1b[38;2;')).toBe(true);
+      }
+    });
+
+    it('should never match a named ANSI foreground SGR used by colorize()', () => {
+      const namedCodes = Object.entries(ANSI)
+        .filter(([k]) => !nonColorKeys.has(k))
+        .map(([, v]) => v);
+      for (let d = 1; d <= 16; d++) {
+        const a = groupTreeOpenAtDepth(d, false);
+        const b = groupTreeOpenAtDepth(d, true);
+        for (const code of namedCodes) {
+          expect(a).not.toBe(code);
+          expect(b).not.toBe(code);
+        }
+      }
+    });
+  });
 });
 
 describe('Color schemes', () => {

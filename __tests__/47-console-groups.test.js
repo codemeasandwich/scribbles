@@ -86,6 +86,28 @@ describe('Console Group Functions', () => {
             scribbles.group.start('Test');
             scribbles.group.end();
             expect(logs[1].info.logLevel).toBe('groupEnd');
+            expect(logs[1].input.message).toBe('Test');
+        });
+
+        it('should default groupEnd caption to the started label (or "Group")', () => {
+            scribbles.group.start('My block');
+            scribbles.group.end();
+            expect(logs[1].input.message).toBe('My block');
+            scribbles.group.collapsed();
+            scribbles.group.end();
+            expect(logs[3].input.message).toBe('Group');
+        });
+
+        it('should accept a string caption on LIFO end()', () => {
+            scribbles.group.start('Outer');
+            scribbles.group.end('Outer · done');
+            expect(logs[1].input.message).toBe('Outer · done');
+        });
+
+        it('should accept an optional caption after group id', () => {
+            const id = scribbles.group.start('Section');
+            scribbles.group.end(id, 'Section · complete');
+            expect(logs[1].input.message).toBe('Section · complete');
         });
 
         it('should decrease group level after end (LIFO)', () => {
@@ -195,7 +217,7 @@ describe('Console Group Functions', () => {
                 pretty: { groupBrackets: true }
             });
             scribbles.group.start('Bracket Test');
-            expect(output[0]).toMatch(/^⎡ /);
+            expect(output[0]).toMatch(/^┌ /);
             scribbles.group.end();
         });
 
@@ -223,7 +245,7 @@ describe('Console Group Functions', () => {
             });
             scribbles.group.start('Test');
             scribbles.group.end();
-            expect(output[1]).toMatch(/^⎣/);
+            expect(output[1]).toMatch(/^└ /);
         });
 
         it('should indent nested groups with vertical bar', () => {
@@ -238,11 +260,68 @@ describe('Console Group Functions', () => {
             scribbles.group.start('Inner');
             scribbles.log('nested');
 
-            // Should have bar + indent for nested content
-            expect(output[2]).toMatch(/^⎜   /);
+            // Two rails + two alignment spaces (see scribble.js groupBrackets content branch)
+            expect(output[2]).toMatch(/^⎜⎜  /);
 
             scribbles.group.end();
             scribbles.group.end();
+        });
+
+        it('should paint each tree column with a distinct depth color when colors are on', () => {
+            const output = [];
+            const { groupTreeOpenAtDepth } = require('../src/formatting/colors');
+            scribbles.config({
+                stdOut: (msg) => output.push(msg),
+                levels: ['error', 'warn', 'log', 'info', 'debug'],
+                logLevel: 'debug',
+                colors: true,
+                mode: 'dev',
+                pretty: { groupBrackets: true },
+                format: '{message}',
+                colorScheme: { info: 'gray', group: 'magenta', groupEnd: 'magenta', groupCollapsed: 'magenta' }
+            });
+            scribbles.group.start('Outer');
+            scribbles.group.start('Inner');
+            scribbles.info('nested-line');
+            const line = output[2];
+            const d1 = groupTreeOpenAtDepth(1, false);
+            const d2 = groupTreeOpenAtDepth(2, false);
+            expect(line.includes(d1)).toBe(true);
+            expect(line.includes(d2)).toBe(true);
+            expect(line).toContain('nested-line');
+            scribbles.group.end();
+            scribbles.group.end();
+        });
+
+        it('should color group start/end tails to match their ┌/└ depth (not colorScheme.group)', () => {
+            const output = [];
+            const { ANSI, groupTreeOpenAtDepth } = require('../src/formatting/colors');
+            scribbles.config({
+                stdOut: (msg) => output.push(msg),
+                levels: ['error', 'warn', 'log', 'info', 'debug'],
+                logLevel: 'debug',
+                colors: true,
+                mode: 'dev',
+                pretty: { groupBrackets: true },
+                format: '{message}',
+                colorScheme: { info: 'gray', group: 'magenta', groupEnd: 'magenta', groupCollapsed: 'magenta' },
+            });
+            scribbles.group.start('Outer');
+            scribbles.info('between');
+            scribbles.group.start('Inner');
+            scribbles.group.end();
+            scribbles.group.end();
+            const depth1 = groupTreeOpenAtDepth(1, false);
+            const depth2 = groupTreeOpenAtDepth(2, false);
+            expect(output[0]).toContain(depth1);
+            expect(output[0]).not.toContain(ANSI.magenta);
+            expect(output[2]).toContain(depth1);
+            expect(output[2]).toContain(depth2);
+            expect(output[3]).toContain(depth1);
+            expect(output[3]).toContain(depth2);
+            expect(output[4]).toContain(depth1);
+            expect(output[4]).not.toContain(depth2);
+            expect(output[4]).not.toContain(ANSI.magenta);
         });
     });
 

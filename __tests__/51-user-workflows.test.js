@@ -378,8 +378,9 @@ describe('User Workflow: Console Groups', () => {
         expect(logs[1].context.groupLevel).toBe(1);
         expect(logs[2].context.groupLevel).toBe(1);
 
-        // Last log is group end
+        // Last log is group end (caption echoes the started label by default)
         expect(logs[3].info.logLevel).toBe('groupEnd');
+        expect(logs[3].input.message).toBe('User Authentication');
     });
 
     it('should support nested groups', () => {

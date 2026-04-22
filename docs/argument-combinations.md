@@ -78,7 +78,7 @@ Same argument combinations as log functions. Returns a LogEntry enriched with sy
 |--------|------|---------|
 | `group.start()` | optional label string | groupId (number) |
 | `group.collapsed()` | optional label string | groupId (number) |
-| `group.end()` | none (closes last) or groupId | LogEntry |
+| `group.end()` | `()` LIFO (caption = start label), `(caption)` LIFO, `(groupId)`, or `(groupId, caption)` | LogEntry |
 
 ---
 

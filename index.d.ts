@@ -477,10 +477,13 @@ interface GroupFunction {
     collapsed: (label?: string) => number;
 
     /**
-     * End a console group
-     * @param groupId - Optional group ID to close (defaults to LIFO - closes last opened)
+     * End a console group.
+     * - `end()` — LIFO; caption defaults to the same label passed to `start` / `collapsed` (or `"Group"`).
+     * - `end("caption")` — LIFO; caption is the string shown on the `groupEnd` line.
+     * - `end(id)` — Close from id (and nested groups); caption defaults to that group's stored label.
+     * - `end(id, "caption")` — Same close; caption is the string shown (pass `""` for an empty caption).
      */
-    end: (groupId?: number) => LogEntry;
+    end: (groupIdOrEndLabel?: number | string, endLabel?: string) => LogEntry;
 }
 
 /**

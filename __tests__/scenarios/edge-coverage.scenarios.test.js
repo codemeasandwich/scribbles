@@ -504,6 +504,14 @@ describe('Scenario: scribblesConfig colorScheme + group + pretty branches', () =
     // state change. No throw; a log body is still emitted.
     expect(() => scribbles.group.end(999999)).not.toThrow();
     expect(captured.length).toBeGreaterThanOrEqual(1);
+    expect(captured[captured.length - 1].input.message).toBe('');
+  });
+
+  it('group.end(unknownId, caption) still logs the caption', () => {
+    const captured = [];
+    scribbles.config({ stdOut: null, dataOut: (d) => captured.push(d), logLevel: 'debug' });
+    scribbles.group.end(999998, 'closed anyway');
+    expect(captured[0].input.message).toBe('closed anyway');
   });
 });
 
