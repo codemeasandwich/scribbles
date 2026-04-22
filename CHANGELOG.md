@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Console group UX:** `scribbles.group.end()` now supports optional **captions** on the
+  `groupEnd` line — LIFO `end("caption")`, `end(id, "caption")`, and default text from the
+  matching `start` / `collapsed` label (or `"Group"`). See `index.d.ts` and
+  `docs/argument-combinations.md`.
+- **`pretty.groupBrackets` tree layout:** depth-aware vertical rails (`⎜`) with `┌` / `└`
+  open and close markers (replacing the older flat corner-only preview). When **colors**
+  and **colorScheme** are enabled, **per-depth 24-bit hues** (`groupTreeOpenAtDepth` in
+  `src/formatting/colors.js`) tint each rail column; implementation detail in
+  `src/formatting/groupLogPrefix.js` keeps `src/core/scribble.js` within the repository
+  size gate.
+
+---
+
 ## [2.0.1] — Integrator regression fixes (Bun CJS chain, trace-across-await)
 
 Two blocker-class issues reported by an integrator running scribbles

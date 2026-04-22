@@ -777,14 +777,14 @@ Output:
 myRepo:local:master [ ] 2022-06-27T16:24:06.473 #3d608bf <group> index.js:10 User Authentication
   myRepo:local:master [ ] 2022-06-27T16:24:06.474 #3d608bf <log> index.js:11 Checking credentials
   myRepo:local:master [ ] 2022-06-27T16:24:06.475 #3d608bf <log> index.js:12 Validating token
-myRepo:local:master [ ] 2022-06-27T16:24:06.476 #3d608bf <groupEnd> index.js:13
+myRepo:local:master [ ] 2022-06-27T16:24:06.476 #3d608bf <groupEnd> index.js:13 User Authentication
 ```
 
 ### Group Functions
 
 1. `scribbles.group.start(label)` - Starts a new group with an optional label. Returns a unique group ID.
 2. `scribbles.group.collapsed(label)` - Starts a collapsed group (for log viewers that support collapsing).
-3. `scribbles.group.end(groupId?)` - Ends a group. If no ID is provided, closes the last opened group (LIFO).
+3. `scribbles.group.end(...)` - Ends a group. **LIFO:** `end()` or `end("caption")`. **By id:** `end(groupId)` or `end(groupId, "caption")` (closes that group and nested groups). The `groupEnd` line shows the start label, an override string, or `"Group"` as documented in `docs/argument-combinations.md`.
 
 ### Nested Groups
 
@@ -829,12 +829,12 @@ scribbles.log('Validating token')
 scribbles.group.end()
 ```
 
-Output:
+Output (tree rails; with `colors` + `colorScheme`, each depth can use a distinct lane hue):
 ```
-⎡ myRepo:local:master [ ] ... <group> User Authentication
+┌ myRepo:local:master [ ] ... <group> User Authentication
 ⎜ myRepo:local:master [ ] ... <log> Checking credentials
 ⎜ myRepo:local:master [ ] ... <log> Validating token
-⎣
+└ myRepo:local:master [ ] ... <groupEnd> index.js:13 User Authentication
 ```
 
 ---
